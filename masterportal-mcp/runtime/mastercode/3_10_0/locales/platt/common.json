@@ -1,0 +1,993 @@
+{
+  "app-store": {
+    "loadServicesJsonFailed": "",
+    "loadStylev3JsonFailed": ""
+  },
+  "core": {
+    "layers": {
+      "errorHandling": {
+        "getGeometryTypeFromWFSFetchfailed": "Die Legende konnte in der Layerinformation nicht erstellt werden!",
+        "getGeometryTypeFromWFSFetchfailedMessage": "Details: Ein benötigter Dienst antwortet nicht.",
+        "getGeometryTypeFromOAFFetchfailed": "",
+        "getGeometryTypeFromOAFFetchfailedMessage": "",
+        "LinkMetadata": "",
+        "wrongStyleId": "",
+        "403": ""
+      },
+      "urlParamWarning": ""
+    },
+    "maps": {
+      "featureViaURL": {
+        "messages": {
+          "featureParsing": "FeatureViaURL: Es konnten nicht alle übergebenen Feature verarbeitet werden.",
+          "featureParsingAll": "FeatureViaURL: Alle übergebenen Feature wurden nicht mit dem richtigen Datentyp übergeben. Bitte beachten Sie die Dokumentation.",
+          "featureParsingNoneAdded": "FeatureViaURL: Allen übergebenen Feature fehlen mindestens ein Parameter. Es wurden keine Feature der Karte hinzugefügt. Bitte beachten Sie die Dokumentation.",
+          "layerNotFound": "FeatureViaURL: Es konnte kein Layer mit der ID {{layerId}} gefunden werden.",
+          "noNameDefined": "FeatureViaURL: Es wurde kein Name für den Layer mit der ID {{layerId}} in der Konfiguration definiert."
+        }
+      },
+      "highlightFeaturesByAttribute": {
+        "messages": {
+          "configurationError": "",
+          "requestFailed": ""
+        }
+      }
+    }
+  },
+  "modules": {
+    "addWMS": {
+      "alertTitleSuccess": "",
+      "alreadyAdded": "",
+      "completeMessage": "&#9989; Die Layer des angeforderten WMS wurden dem Themenbaum hinzugefügt!",
+      "errorHttpsMessage": " &#10060; Das von Ihnen angeforderte WMS befindet sich unter einer http-Url. Das Masterportal kann nur WMS über https (SSL) einbinden.",
+      "errorMessage": "&#10060; Der angegebene Dienst konnte nicht geladen werden. Bitte stellen Sie sicher, dass die URL richtig angegeben wurde.<br><br> Falls das Problem weiterhin auftritt, wenden Sie sich bitte an den Betreiber des Dienstes mit folgendem Hinweis eines häufig auftretenden Fehlers: <br><strong>Es soll sichergestellt werden, dass ein CORS-Header für den Dienst gesetzt ist. Dies wird von der <a target='_blank' href='https://www.gdi-de.org/download/AK_Geodienste_Architektur_GDI-DE_Bereitstellung_Darstellungsdienste.pdf'>GDI-DE</a> im Kapitel 4.7.1 empfohlen.</strong>",
+      "errorTitle": "",
+      "ifInExtent": "&#10060; Die über den WMS bereitgestellten Geodaten liegen außerhalb des darstellbaren Bereichs. WMS hinzufügen ist nicht möglich.",
+      "name": "WMS doartodoan",
+      "placeholder": "Hier bidde de WMS-URL ingeven.",
+      "textLoadLayer": "Layer Laden",
+      "examples": "Beispiele:"
+    },
+    "alerting": {
+      "alertWindowTitle": "",
+      "categories": {
+        "error": "Fehler",
+        "info": "Info",
+        "news": "",
+        "success": "Erfolg",
+        "warning": "Upppassen"
+      },
+      "created": "",
+      "hideMessage": "Düsse Naricht nich mehr wiesen",
+      "showMessage": ""
+    },
+    "bufferAnalysis": {
+      "clearButton": "Trüchsetten",
+      "name": "Buffer Analyse",
+      "notOverlapping": "uterhalb Radien",
+      "overlapping": "innerhalb Radien",
+      "rangeLabel": "Radius (m)",
+      "resultTypeLabel": "Ergebnistyp",
+      "saveButton": "Spiekern",
+      "sourceLayerNotFound": "Der gespeicherte Quell-Layer mit der ID {{layerId}} wurde nicht gefunden.",
+      "sourceSelectLabel": "Quell-Layer",
+      "targetLayerNotFound": "Der gespeicherte Ziel-Layer mit der ID {{layerId}} wurde nicht gefunden.",
+      "targetSelectLabel": "Ziel-Layer"
+    },
+    "compareMaps": {
+      "description": "Twee Karten neveneen oder übereen vergelieken",
+      "firstLayer": "Eerste Layer",
+      "horizontal": "horizontal",
+      "loadingWait": "Bitte warten Sie, dat Tool laadt de Vergleichskarten",
+      "name": "Karten vergelieken",
+      "reset": "Resetten",
+      "sameLayerSelected": "Dat is tweemal utwählt worrn. De Utwahl is torüchsett worrn.",
+      "secondLayer": "Tweede Layer",
+      "selectLayerOneFirst": "Bitte eerst den eersten Layer utsöken",
+      "splitDirection": "Richtung: ",
+      "vertical": "vertikal"
+    },
+    "contact": {
+      "addFileButton": "",
+      "error": {
+        "mail": "Bidde giff dien echte E-Mail-Adress.",
+        "message": "De E-Mail kun nich tostellt warn!",
+        "messageInput": "Dien Naricht mut tominnst de Läng vun {{length}} Teken hebben.",
+        "phone": "Ünner welke Telefonnummer büss du to Huus?",
+        "username": "Bidde giff uns dien Naam."
+      },
+      "errorIncompleteDeclarations": "Dien Fraag ward erst affsend, wenn du all Steden utfüllt hess.",
+      "fileFormatMessage": "",
+      "fileSizeMessage": "",
+      "mailSubject": "Supportanfraag toon Portal ",
+      "messageLabel": "Dien Naricht",
+      "name": "Kuntakt",
+      "placeholder": {
+        "mail": "Dien E-Mail-Adress",
+        "message": "Bidde stell dien Fraag un tipp hier \"$t(common:modules.contact.sendButton)\".",
+        "phone": "Dien Telefonnummer",
+        "username": "Dien Naam"
+      },
+      "privacyPolicy": {
+        "info": "Sie erklären sich damit einverstanden, dass Ihre Daten zur Bearbeitung Ihres Anliegens verwendet werden. Weitere Informationen und Widerrufshinweise finden Sie in der <a href=\"{{privacyPolicyLink}}\" target=\"_blank\">Datenschutzerklärung</a>.",
+        "label": "Bitte akzeptieren Sie die Datenschutzerklärung."
+      },
+      "removeAttachment": "",
+      "sendButton": "Affschicken",
+      "successMessage": "Dien Fraag is op denn Wech.",
+      "successTicket": "Dien Ticketnummer is: "
+    },
+    "controls": {
+      "backForward": {
+        "stepBackward": "Letzte Ansicht",
+        "stepForward": "Nächste Ansicht"
+      },
+    "compareFeatures": {
+        "title": "Verglieksliss",
+        "topicsSelection": "Themen Utwahl",
+        "removeFromList": "Vun de List wegmaken",
+        "noFeatures": {
+            "nothingSelected": "Es sind keine {{objects}} für die Vergleichsliste ausgewählt.",
+            "objectName": "Objekte",
+            "info": "Klicken Sie auf ein Objekt in der Karte. Es öffnet sich ein Fenster mit den jeweiligen Sachinformationen. In der rechten oberen Ecke befindet sich ein Sternsymbol {{iconEmptyStar}}. Klicken Sie auf dieses Symbol, um das Objekt zur Vergleichsliste hinzuzufügen. Das Sternsymbol wird gelb eingefärbt {{iconYellowStar}}. Ein erneuter Klick auf das Sternsymbol entfernt das Objekt wieder von der Vergleichsliste."
+        },
+        "feedback": {
+            "added": "Das Feature wurde zur Vergleichsliste hinzugefügt",
+            "addedWithName": "{{currentFeatureName}} wurde zur Vergleichsliste hinzugefügt",
+            "notAdded": "Das Feature konnte nicht zur Vergleichsliste hinzugefügt werden",
+            "notAddedWithName": "{{currentFeatureName}} konnte nicht zur Vergleichsliste hinzugefügt werden",
+            "removeObjects": "Bitte entfernen Sie zuerst mindestens ein Objekt bevor Sie fortfahren.",
+            "goToComparisonlist": "To de Vergliekslist"
+        }
+      },
+      "button3d": {
+        "buttonTitle2d": "2D",
+        "buttonTitle3d": "3D"
+      },
+      "fullScreen": {
+        "enable": "Activar la pantalla completa",
+        "disable": "Desactivar la pantalla completa"
+      },
+      "freeze": {
+        "enable": "Vollbild aktivieren",
+        "disable": "Vollbild deaktivieren"
+      },
+      "orientation": {
+        "distanceUnit": "Meter",
+        "geolocationDeniedText": "Lokalisierung nicht verfügbar",
+        "imgAlt": "Bild für Point of Interest",
+        "poiChoiceCurrentPosition": "Standort",
+        "poiChoiceCustomPosition": "Adresssuche oder Punkt in Karte setzen",
+        "poiChoiceConfirmation": "OK",
+        "poiChoiceStop": "Beenden",
+        "poiChoiceTitle": "Ausgangspunkt für Umkeissuche wählen:",
+        "titleGeolocate": "Standpunkt",
+        "titleGeolocatePOI": "In der Nähe",
+        "trackingDeniedText": "'In der Nähe' nicht verfügbar."
+      },
+      "totalView": {
+        "titleButton": "Trüch to Startansicht"
+      },
+      "zoom": {
+        "zoomIn": "Rinzoomen",
+        "zoomOut": "Rutzoomen"
+      }
+    },
+    "coordToolkit": {
+      "cartesian": {
+        "eastingLabel": "Rechtswert",
+        "northingLabel": "Hochwert"
+      },
+      "coordSystemField": "Koordinatensystem",
+      "coordsCopied": "",
+      "copyCoordBtn": "",
+      "copyCoordsBtn": "",
+      "copyToClipboard": {
+        "contentSaved": "Inhalt wurde in die Zwischenablage kopiert.",
+        "contentNotSaved": "Inhalt konnte nicht in die Zwischenablage kopiert werden."
+      },
+      "errorMsg": {
+        "example": "Beispiel: ",
+        "hdmsNoCoord": "Bitte geben Sie Ihren Wert der {{valueKey}} vollständig ein.",
+        "hdmsNoMatch": "Die Eingabe für den Wert der {{valueKey}} ist nicht korrekt!",
+        "noCoord": "Bitte geben Sie Ihren {{valueKey}} vollständig ein.",
+        "noMatch": "Die Eingabe für den {{valueKey}} ist nicht korrekt! "
+      },
+      "exampleAcronym": "Bsp. ",
+      "hdms": {
+        "eastingLabel": "Länge",
+        "northingLabel": "Breite"
+      },
+      "heightLabel": "Höhe",
+      "hintSearch": "Geben Sie die zu suchenden Koordinaten ein",
+      "hintSupply": "Klicken Sie in die Karte um Koordinaten abzufragen",
+      "influenceFactors": "Die angezeigten Werte unterliegen Ungenauigkeiten, die u.a. durch folgende Faktoren beeinflusst werden, z.B. Maßstab, Auflösung der Karte und des Bildschirmes.",
+      "info": "Informatschonen",
+      "name": "Koordinaten",
+      "noHeightBuilding": "Gebäudefläche, keine Höhen vorhanden",
+      "noHeightWater": "Gewässerfläche, keine Höhen vorhanden",
+      "postionCoordinates": "",
+      "search": "Koordinaten söken",
+      "searchBtn": "Söök",
+      "supply": "Koordinaten affragen"
+    },
+    "draw": {
+      "name": "Teken / Schrieven"
+    },
+    "draw_old": {
+      "attributeSelect": {
+        "attributeDuplicatedKeyError": "",
+        "attributeKeyError": "",
+        "input": {
+          "key": "",
+          "value": ""
+        },
+        "noFeatureSelected": "",
+        "remove": "",
+        "save": ""
+      },
+      "button": {
+        "delete": "Geometrie / Text löschen",
+        "deleteAll": "Alles löschen",
+        "download": "Rünner loaden",
+        "draw": "Geometrie / Text zeichnen",
+        "edit": "Geometrie / Text bearbeiten",
+        "editAttributes": "",
+        "redo": "Wiederholen",
+        "saveDrawing": "Zeichnung speichern",
+        "undo": "Rückgängig machen"
+      },
+      "clickToPlaceText": "Klicken Sie auf die Karte um den Text zu platzieren",
+      "color": "Füllfarbe",
+      "colorContour": "Umrissfarbe",
+      "colors": {
+        "black": "Schwatt",
+        "blue": "Blaag",
+        "green": "Greun",
+        "grey": "Gries",
+        "orange": "Orang",
+        "red": "Root",
+        "white": "Witt",
+        "yellow": "Geel"
+      },
+      "defined": "definiert",
+      "doubleCirclePlaceholder": "Bitte geben Sie einen Radius ein",
+      "download": {
+        "enterFilename": "Bitte Dateiname angeben",
+        "filename": "Dateiname",
+        "format": "Format",
+        "pleaseChoose": "Bitte Auswählen",
+        "unknownGeometry": "Unbekannte Geometrie: <strong>{{geometry}}</strong>"
+      },
+      "drawLayerVisible": "",
+      "drawTypeOptions": {
+        "drawArea": "Fläche",
+        "drawCircle": "Kreis",
+        "drawCurve": "Freihandlinie",
+        "drawDoubleCircle": "Doppelkreis",
+        "drawLine": "Linien",
+        "drawSymbol": "Symbol",
+        "writeText": "Text"
+      },
+      "fontName": "Schriftart",
+      "fontSize": "Schriftgröße",
+      "geometry": "Geometrie",
+      "geometryDrawFailed": "Die übergebene Geometrie konnte nicht dargestellt werden.",
+      "iconList": {
+        "gelber Pin": "gelber Pin",
+        "iconCloud": "Wolke",
+        "iconLeaf": "Blatt",
+        "iconMeadow": "Wiese",
+        "iconPoint": "Punkt"
+      },
+      "innerColorContour": "Innere Umrissfarbe",
+      "innerRadius": "Innerer Radius",
+      "interactive": "interaktiv",
+      "limitReached_one": "Sie haben bereits {{count}} Objekt gezeichnet, bitte löschen Sie dieses, bevor Sie fortfahren!",
+      "limitReached_other": "Sie haben bereits {{count}} Objekte gezeichnet, bitte löschen Sie erst eines, bevor Sie fortfahren!",
+      "lineWidth": "Strichstärke",
+      "method": "Methode",
+      "name": "Teken / Schrieven",
+      "outerColorContour": "Äußere Umrissfarbe",
+      "outerRadius": "Äußerer Radius",
+      "radius": "Radius",
+      "symbol": "Symbol",
+      "text": "Text",
+      "transparency": "Transparenz",
+      "transparencyOutline": "Transparenz Umriss",
+      "undefinedInnerCircle": "Bitte definieren Sie auch den inneren Kreis.",
+      "undefinedOuterCircle": "Bitte definieren Sie auch den äußeren Kreis.",
+      "undefinedRadius": "Bitte geben Sie einen Radius an.",
+      "undefinedTwoCircles": "Bitte definieren Sie beide Kreise.",
+      "unit": "Einheit"
+    },
+    "featureLister": {
+      "chooseTheme": "Bidde Thema utwählen",
+      "details": "Details",
+      "detailsOfSelected": "Details vun de utwählte Features",
+      "key": "{{shownFeatures.x}} von {{shownFeatures.y}} Features gelistet",
+      "list": "Liste",
+      "more": "Mehr...",
+      "name": "Lista",
+      "visibleVectorLayers": "Sichtbare Vektorlayer"
+    },
+    "fileImport": {
+      "alertingMessages": {
+        "featureError": "Ein Feature in dieser Datei konnte nicht gelesen werden.",
+        "formatError": "De Datei \"{{filename}}\" konnte nicht gelesen werden. Bitte prüfen Sie, ob die Datei das Format *.kml. *.gpx, *.geojson oder *.json hat.",
+        "missingFileContent": "Fehler beim Lesen der Datei \"{{filename}}\". Bitte überprüfen Sie den Dateityp sowie den Inhalt der Datei. Falls die Datei fehlerfrei ist, wenden Sie sich bitte an den Support.",
+        "missingFormat": "Dat Dateiformat {{format}} wird nicht unterstützt. Bitte wenden Sie sich an den Support.",
+        "success": "De Datei \"{{filename}}\" wurde erfolgreich importiert.",
+        "successPartly": "De Datei \"{{filename}}\" wurde teilweise importiert."
+      },
+      "captions": {
+        "drawTool": "$t(common:modules.draw.name) öffnen",
+        "introDrawTool": "Importierte Geometrien können im Nachhinein verändert werden. Nutzen Sie hierfür das Werkzeug  \"$t(modules.tools.draw)\".",
+        "introFormats": "Es können KML-Dateien (*.kml), GPX-Dateien (*.gpx) oder GeoJson-Dateien (*.geojson, *.json) importiert werden.",
+        "introInfo": "Importieren Sie Ihre gewünschte Datei einfach per Drag and Drop oder alternativ mit dem Öffnen-Dialog des Browsers.",
+        "supportedFiletypes": {
+          "auto": "Automatische Erkennung",
+          "geojson": "GeoJson-Datei (*.geojson, *.json)",
+          "gpx": "GPX-Datei (*.gpx)",
+          "kml": "KML-Datei (*.kml)"
+        }
+      },
+      "fileZoom": "",
+      "importFiles": "",
+      "name": "Datei inföhrn",
+      "removeAttachment": "",
+      "successfullyImportedLabel": "Erfolgreich importiert:",
+      "zoom": ""
+    },
+    "filter": {
+      "alertingMessages": {
+        "noMatchingFilterId": ""
+      },
+      "ariaLabel": {
+        "checkbox": "",
+        "date": "",
+        "dateRange": {
+          "from": "",
+          "to": ""
+        },
+        "dropdown": "",
+        "input": "",
+        "radio": "",
+        "slider": "",
+        "sliderRange": {
+          "max": "",
+          "min": ""
+        }
+      },
+      "button": {
+        "confirm": "Utwähln",
+        "stop": ""
+      },
+      "download": {
+        "enterFilename": "",
+        "filename": "",
+        "format": "",
+        "label": "",
+        "labelBtn": "",
+        "pleaseChoose": ""
+      },
+      "dropdown": {
+        "deselectAll": "",
+        "emptyList": "",
+        "noElements": "",
+        "selectAll": ""
+      },
+      "filterButton": "",
+      "filterResult": {
+        "disabledInfo": "",
+        "label": "",
+        "unit": ""
+      },
+      "geometryFilter": {
+        "activate": "",
+        "buffer": "",
+        "geometries": {
+          "circle": "",
+          "lineString": "",
+          "polygon": "",
+          "rectangle": ""
+        },
+        "help": "",
+        "removeGeometry": "",
+        "selectGeometry": ""
+      },
+      "info": {
+        "snippetCheckbox": "",
+        "snippetDate": "",
+        "snippetDateRange": "",
+        "snippetDropdown": "",
+        "snippetInput": "",
+        "snippetSlider": "",
+        "snippetSliderRange": ""
+      },
+      "name": "Filter",
+      "searchInMapExtent": "",
+      "slider": {
+        "valueEmptyErrorMessage": "",
+        "valueOutOfRangeErrorMessage": ""
+      },
+      "snippetTags": {
+        "resetAll": "",
+        "selectionText": ""
+      },
+      "upload": {
+        "geometryParseError": ""
+      }
+    },
+    "getFeatureInfo": {
+      "boolean": {
+        "0": "Nee",
+        "1": "Jo",
+        "false": "Nee",
+        "no": "Nee",
+        "true": "Jo",
+        "yes": "Jo"
+      },
+      "buttonBack": "",
+      "buttonForward": "",
+      "errorMessage": "Bei der Informationsabfrage (GetFeatureInfo) ist ein Fehler aufgetreten.<br>Bitte versuchen Sie es zu einem späteren Zeitpunkt erneut. Falls das Problem weiterhin auftritt, wenden Sie sich bitte an den Betreiber des Dienstes.",
+      "name": "Informatschonen affragen",
+      "themes": {
+        "default": {
+          "imgAlt": "Es konnte kein Bild geladen werden.",
+          "noAttributeAvailable": "Giff keen Attribut !"
+        },
+        "sensor": {
+          "chargingStations": {
+            "available": "Verfügbarkeit",
+            "charging": "Auslastung",
+            "outoforder": "Außer Betrieb"
+          },
+          "sensor": {
+            "dataName": "Daten",
+            "header": {
+              "description": "Beschriebung",
+              "name": "Name",
+              "ownerThing": "Eigentümer"
+            }
+          },
+          "sensorBarChart": {
+            "chartTitleAverage": "Mittelwert aus",
+            "clock": "{{value}} Uhr",
+            "month_one": "{{count}} Monat",
+            "month_other": "{{count}} Monaten",
+            "nextWeekday": "Nächster Wochentag",
+            "noticeTextAvailable": "(Es werden ausschließlich Daten mit dem Wert available / verfügbar berücksichtigt)",
+            "noticeTextCharging": "(Es werden ausschließlich Daten mit dem Wert charging / ladend berücksichtigt)",
+            "noticeTextOutoforder": "(Es werden ausschließlich Daten mit dem Wert outoforder / Außer Betrieb berücksichtigt)",
+            "previousWeekday": "Vorheriger Wochentag",
+            "year_one": "{{count}} Jahr",
+            "year_other": "{{count}} Jahren"
+          },
+          "sensorData": {
+            "firstColumnHeaderName": "Eigenschaften"
+          }
+        }
+      }
+    },
+    "language": {
+      "de": "Deutsch",
+      "en": "English",
+      "es": "Español",
+      "it": "Italiano",
+      "name": "Sprache ändern",
+      "platt": "Platt",
+      "pt": "Português",
+      "ru": "Русский",
+      "tr": "Türkçe",
+      "ua": "Українська",
+      "nl": "Nederlands"
+
+    },
+    "layerClusterToggler": {
+      "info": "",
+      "name": "",
+      "toggle": ""
+    },
+    "layerInformation": {
+      "additionalMetadata": "mehr Metadaten",
+      "addressSuffix": "Adress",
+      "attachFileMessage": "ggf. Datei-Typ bien rünner loaden anhängen",
+      "downloadDataset": "Datensatz rünner loaden",
+      "lastModified": "Letzte Ännerung",
+      "legend": "Legende",
+      "name": "Informatschonen und Legende",
+      "noMetadataLoaded": "Es konnten keine Metadaten geladen werden!",
+      "periodicityTitle": "Datenopfrischen",
+      "publicationCreation": "Publikation / Erstellung"
+    },
+    "layerPills": {
+      "next": "",
+      "previous": "",
+      "remove": ""
+    },
+    "layerSelection": {
+      "addSelectedSubjectsToMap": "",
+      "addSubject": "",
+      "name": "Themenauswahl",
+      "baselayers": "",
+      "selectAll": "",
+      "selectedSubjectsCount_one": "",
+      "selectedSubjectsCount_other": ""
+    },
+    "layerSlider": {
+      "displayLayers": "Anzeige diverser Layer.",
+      "name": "Tiedreeg",
+      "serviceOne": "Dienst 1",
+      "serviceTwo": "Dienst 2",
+      "serviceThree": "Dienst 3",
+      "serviceFour": "Dienst 4",
+      "sliderTypeHandle": "",
+      "sliderTypePlayer": "",
+      "title": "Simulation von Beispiel-WMS",
+      "titleNotConfigured": "Titel nich konfiguriert"
+    },
+    "layerTree": {
+      "addLayer": "",
+      "categoryInspire": "",
+      "categoryOpendata": "",
+      "categoryOrganisation": "",
+      "iconRemoveLayer": "",
+      "iconSubMenu": "",
+      "iconTransparency": "",
+      "infosAndLegend": ""
+    },
+    "legend": {
+      "linkToPdf": "Zur externen Legende (PDF)",
+      "name": "Legende",
+      "noLegendForLayerInfo": "Legende nicht verfügbar"
+    },
+    "login": {
+      "login": "Anmelden",
+      "description": "Anmellen mit Stand un Passwoort",
+      "descriptionLoggedIn": "Se sünd anmellt",
+      "logout": "Abmelden",
+      "progress": "Bitte meld Sie sik in dem geöffneten Aven an.",
+      "name": "Name",
+      "E-Mail": "E-Mail",
+      "Profil": "Profil"
+    },
+    "measure": {
+      "area": "Fläche",
+      "deleteMeasurements": "Messungen löschen",
+      "finishWithDoubleClick": "Abschließen mit Doppelklick",
+      "geometry": "Geometrie",
+      "influenceFactors": "Die angezeigten Werte unterliegen Ungenauigkeiten, die u.a. durch folgende Faktoren beeinflusst werden, z.B. Maßstab, Auflösung der Karte und des Bildschirmes.",
+      "inputAccuracy": "Eingabegenauigkeit und Anzahl der digitalisierten Punkte",
+      "measure": "Einheit",
+      "measureDistance": "Strecke der Messlinie bzw. Größe der Messfläche",
+      "name": "Affstand un Flaag meten",
+      "resolution": "Auflösung der Karte",
+      "scale": "Maßstab",
+      "screenResolution": "Auflösung des Bildschirmes",
+      "stretch": "Strecke"
+    },
+    "menu": {
+      "ariaLabelClose": "",
+      "ariaLabelOpen": "",
+      "name": "Menü"
+    },
+    "mouseHover": {
+      "infoText": "(Wiedere Dinger, bidde optrecken.)"
+    },
+    "news": {
+      "headline": "",
+      "name": ""
+    },
+    "openConfig": {
+      "explanation": "",
+      "loadFileFailed": "",
+      "loadFileSuccess": "",
+      "name": "",
+      "openFile": ""
+    },
+    "portalFooter": {
+      "designation": "Kartographie und Gestaltung:",
+      "mapDiscrepancy": "Kartenunstimmigkeit",
+      "scale": "Skalierung vun de Koart"
+    },
+    "print": {
+      "alertMessage": "",
+      "authorLabel": "",
+      "autoAdjustScale": "",
+      "createDownloadFile": "",
+      "downloadFile": "",
+      "dpiLabel": "DPI",
+      "errorMessage": "",
+      "formatLabel": "Format",
+      "hintInfoScale": "Der ausgewählte Druckmaßstab weicht vom Maßstab im Kartenfenster ab. Das kann zu einem veränderten Kartenlayout im Druck führen.",
+      "invisibleLayer": "Folgende Themen können im ausgewählten Druckmaßstab {{scale}} nicht gedruckt werden:",
+      "layoutLabel": "Layout",
+      "name": "Koart drucken",
+      "outputfileTitleLabel": "",
+      "printLabel": "Drucken",
+      "scaleLabel": "Druckmaßstab",
+      "subtitleLabel": "",
+      "textFieldLabel": "",
+      "titleLabel": "Titel",
+      "validationWarning": "",
+      "vtlWarning": "Da MapFish 3 keine Vector Tile Layer unterstützt, werden die folgenden aktiven Layer nicht in der Printansicht erscheinen:",
+      "waitForPrintErrorMessage": "",
+      "withInfoLabel": "Mit Informatschonen",
+      "withLegendLabel": "Mit Legende"
+    },
+    "routing": {
+      "addWaypoint": "",
+      "avoidOptions": {
+        "FERRIES": "",
+        "header": "",
+        "HIGHWAYS": "",
+        "STEPS": "",
+        "TOLLWAYS": "",
+        "MIXEDTRAFFIC": "",
+        "COBBLESTONE": "",
+        "NARROWWAYS": ""
+      },
+      "batchProcessing": {
+        "cancel": "",
+        "example": "",
+        "header": "",
+        "isProcessing": "",
+        "placeFile": "",
+        "structure": "",
+        "uploadFile": ""
+      },
+      "coordinateInputHelp": "",
+      "deleteWaypoint": "",
+      "directions": {
+        "batchProcessing": {
+          "downloadHeader": {
+            "distance": "",
+            "profile": "",
+            "time": "",
+            "xEnd": "",
+            "xStart": "",
+            "yEnd": "",
+            "yStart": ""
+          },
+          "errorNoEntries": "",
+          "errorRowContainsEntriesNoNumber": "",
+          "errorSomeFailed": "",
+          "errorToManyEntriesInFile": "",
+          "errorToManyEntriesInRow": "",
+          "structure": ""
+        },
+        "deleteRestrictedAreas": "",
+        "editRestrictedAreas": "",
+        "preference": {
+          "RECOMMENDED": "",
+          "SHORTEST": ""
+        },
+        "preferenceLabel": "",
+        "restrictedAreas": ""
+      },
+      "download": {
+        "filename": "",
+        "filenamePlaceholder": "",
+        "format": "",
+        "header": "",
+        "saveResult": ""
+      },
+      "endpoint": "",
+      "errors": {
+        "avoidAreaBig": "",
+        "errorIsochronesFetch": "",
+        "errorRouteFetch": "",
+        "fetchingCoordinates": "",
+        "noRouteFound": ""
+      },
+      "isochrones": {
+        "batchProcessing": {
+          "errorNoEntries": "",
+          "errorRowContainsEntriesNoNumber": "",
+          "errorSomeFailed": "",
+          "errorToManyEntriesInFile": "",
+          "errorToManyEntriesInRow": "",
+          "structure": ""
+        },
+        "calculate": "",
+        "interval": "",
+        "legend": "",
+        "maxDistance": "",
+        "maxTraveltime": "",
+        "optimization": {
+          "DISTANCE": "",
+          "TIME": ""
+        },
+        "optimizeHeader": "",
+        "startpoint": ""
+      },
+      "moveWaypointDown": "",
+      "moveWaypointUp": "",
+      "name": "",
+      "resetSettings": "",
+      "speedprofiles": {
+        "CAR": "",
+        "CYCLING": "",
+        "FOOT": "",
+        "HGV": "",
+        "WHEELCHAIR": ""
+      },
+      "startpoint": "",
+      "tabs": {
+        "DIRECTIONS": "",
+        "ISOCHRONES": ""
+      },
+      "waypoint": ""
+    },
+    "scaleSwitcher": {
+      "label": "Maßstab",
+      "name": "Maat umschalten"
+    },
+    "searchBar": {
+      "locationFinder": {
+        "errorMsg": "Suche per LocationFinder fehlgeschlagen",
+        "serverError": "Fehler während der serverseitigen Verarbeitung der Anfrage",
+        "unknownProjection": "Ergebnisse in unbekanntem Koordinatensystem"
+      },
+      "placeholder": {
+        "address": "Sök na Adress",
+        "addressDistrict": "Sök Adresse, Stadtteil",
+        "addressHospitalBplan": "Sök na Adresse/Krankenhaus/B-Plan",
+        "addressTopic": "Sök Adress, Stadtdeel, Themen",
+        "addressTopicParcel": "Sök Adress, Stadtdeel, Themen, Flurstück"
+      },
+      "showAllResults": "alle Ergebnisse anzeigen",
+      "searchResults": "Suchergebnisse",
+      "search": "Sök",
+      "searchResultList": "Sök Übersicht",
+      "searchResultsFrom": "Sök Ergebnisse: ",
+      "mark": "Wähle das Thema",
+      "add": "Thema hinzufügen",
+      "type": {
+        "address": "Adress",
+        "district": "Stadtdeel",
+        "folder": "",
+        "general": "",
+        "location": "Ort",
+        "parcel": "Flurstück",
+        "street": "Stroat",
+        "subject": "Thema",
+        "topic": "Thema (Fachdaten)"
+      },
+      "specialWFS": {
+        "ongoing": "im Verfahren",
+        "terminated": "festgestellt",
+        "hazardous": "Störfallbetrieb",
+        "childcare": "Kita",
+        "bplan": "B-Plan"
+      },
+      "noInitialResults": "Die initiale Suche ergab keine Treffer.",
+      "showAll": "Alle anzeigen"
+    },
+    "selectFeatures": {
+      "name": "Features utwählen",
+      "noFeatureChosen": "Keene Features utsöcht. Söök Föögsels ut, indem du de Strg-Taste hollst un en Box üm de gewünsten Features treckst, oder föög eenige Features dör dat Holten vun de Strg-Taste un greep mit den linken Mood to.",
+      "propertylessFeature": "Element ohne Attribute",
+      "clearSelection": "Auswahl opheben",
+      "deselectFeature": "Feature ut de Auswahl nähmen",
+      "zoomToFeature": "Auf dieses Feature zoomen"
+    },
+    "shadow": {
+      "name": "Scheem",
+      "pickDate": "",
+      "shadowDisplayOff": "",
+      "shadowDisplayOn": "",
+      "slideHour": "",
+      "withInfoLabel": ""
+    },
+    "shareView": {
+      "downloadQR": "",
+      "myMap": "",
+      "name": "",
+      "share": "",
+      "shareFacebook": "",
+      "shareHeadline": "",
+      "shareLink": "",
+      "shareQR": "",
+      "shareTwitter": "",
+      "linkCopied": ""
+    },
+    "styleVT": {
+      "chooseTheme": "Bidde Thema utwählen",
+      "introText": "Auf VectorTiles-Layer können verschiedene vordefinierte Styles angewendet werden, um die Ansicht für den jeweiligen Anwendungszweck zu optimieren.",
+      "name": "Style VT",
+      "noStyleableLayers": "Derzeit sind keine Themen verfügbar, auf die dieses Werkzeug angewendet werden könnte.",
+      "style": "Style",
+      "theme": "Thema"
+    },
+    "wfsSearch": {
+      "district": "Gemarkung",
+      "fieldSelectionLabel": "",
+      "instancesSelectLabel": "Instanzutwahl",
+      "name": "WFS Söök",
+      "noResults": "Es wurden keine Ergebnisse für Ihre Suchkriterien gefunden. Bitte versuchen Sie es erneut.",
+      "optionsPlaceholder": "Bitte wählen Sie eine Option aus!",
+      "parcelNumber": "Flurstücksnummer",
+      "parcelSearch": "Flurstück Söök",
+      "resetButton": "Trüchsetten",
+      "searchButton": "Söök",
+      "searchError": "Fehler bei der Suche von Feature: {{error}}.",
+      "showResults_one": "",
+      "showResults_other": "Wies de Ergebnisse",
+      "userHelp": {
+        "and": "und",
+        "label": "Informationen bezüglich der Suchergebnisse",
+        "or": "oder",
+        "text": "Die Ergebnisse der Suche werden die Bedingungen / Klauseln {{userHelp}} erfüllen. <br /> *Pflichtfeld"
+      },
+      "wrongConfig": "De Konfiguration giff dat nich"
+    },
+    "wfst": {
+      "deleteInteraction": {
+        "headline": "",
+        "text": ""
+      },
+      "error": {
+        "allLayersNotSelected": "",
+        "geometryOutOfRange": "",
+        "layerNotConfiguredCorrectly": "",
+        "layerNotSelected": "",
+        "noFeature": "",
+        "onlyNumbersAllowed": "",
+        "requiredPropertiesNotSet": ""
+      },
+      "form": {
+        "discard": "",
+        "save": ""
+      },
+      "interactionSelect": {
+        "delete": "",
+        "line": "",
+        "point": "",
+        "polygon": "",
+        "update": ""
+      },
+      "layerSelectLabel": "",
+      "name": "WFS-T Tool",
+      "polygonHint": "",
+      "transaction": {
+        "error": {
+          "axios": "",
+          "InvalidParameterValue": "",
+          "MissingParameterValue": "",
+          "OperationNotSupported": "",
+          "OperationParsingFailed": "",
+          "OperationProcessingFailed": ""
+        },
+        "success": {
+          "baseSuccess": "",
+          "delete": "",
+          "insert": "",
+          "update": ""
+        }
+      }
+    },
+    "wmsTime": {
+      "layerSwiper": {
+        "description": "Der Swiper kann mithilfe der Maus oder den Pfeiltasten der Tastatur bewegt werden. Bei der Nutzung der Pfeiltasten wird der Swiper {{amount}}px in die entsprechende Richtung bewegt.",
+        "title": "Layer vergleichen"
+      },
+      "timeSlider": {
+        "buttons": {
+          "backward": "Einen Zeitpunkt zurück",
+          "deactivateLayerSwiper": "Layer entfernen",
+          "forward": "Einen Zeitpunkt voran",
+          "layerSwiper": "Zeitpunkte vergleichen",
+          "play": "Ein automatisches Abspielen aller Zeitpunkte, ausgehend vom aktuell ausgewählten Zeitpunkt"
+        },
+        "inputRangeLabel": "Einen Zeitpunkt auswählen"
+      }
+    }
+  },
+  "shared": {
+    "js": {
+      "api": {
+        "cswParser": {
+          "annually": "Al Jahr",
+          "asNeeded": "Wenn bruukt ward",
+          "biannually": "Twee mal int Jahr",
+          "continual": "Al Tied",
+          "daily": "Al Daag",
+          "fortnightly": "Veerteihndaagig",
+          "irregular": "Ungeregelte Intervalle",
+          "monthly": "Al Maant",
+          "notPlanned": "Nich plant",
+          "quarterly": "Al veer Maant",
+          "unknown": "Unbekannt",
+          "weekly": "Al Week"
+        }
+      },
+      "utils": {
+        "buildings": "Buwark",
+        "selectedFeatures": ""
+      }
+    },
+    "modules": {
+      "buttons": {
+        "download": "Rünner loaden",
+        "error": {
+          "download": "Beim Herunterladen der gewünschten Daten ist ein Fehler aufgetreten."
+        }
+      },
+      "draw": {
+        "drawEdit": {
+          "delete": "Geometrie / Text löschen",
+          "deleteAll": "Alles löschen",
+          "modify": "Geometrie / Text bearbeiten",
+          "redo": "Wiederholen",
+          "undo": "Rückgängig machen"
+        },
+        "drawLayout": {
+          "fillColor": "Füllfarbe",
+          "fillTransparency": "Transparenz",
+          "innerCircle": "Innerer Kreis:",
+          "outerCircle": "Äußerer Kreis:",
+          "strokeColor": "Umrissfarbe",
+          "strokeWidth": "Strichstärke",
+          "extrudedHeight": "Extrudierte Höhe"
+        },
+        "drawSettingsCircle": {
+          "interactive": "Interaktiv",
+          "radii": {
+            "innerRadius": "Innerer Radius",
+            "outerRadius": "Äußerer Radius",
+            "radius": "Radius"
+          },
+          "settings": {
+            "circle": "Einstellungen Kreis:",
+            "doubleCircle": "Einstellungen Doppelkreis:"
+          },
+          "unit": "Einheit"
+        },
+        "drawTypes": {
+          "box": "Box",
+          "circle": "Kreis",
+          "doubleCircle": "Doppelkreis",
+          "geometries": "Geometrien",
+          "line": "Linie",
+          "pen": "Stift",
+          "point": "Punkt",
+          "polygon": "Fläche",
+          "rectangle": "Rechteck",
+          "symbols": "Symbole"
+        }
+      },
+      "graphicalSelect": {
+        "alert": {
+          "notSupportedElement": "Template-Element der graphischen Auswahl wird nicht unterstützt! Verfügbar sind:",
+          "notSupportedOption": "Graphische Auswahl enthält nicht unterstützte Elemente! Verfügbar sind:",
+          "notSupportedSelection": "SelectedOption der graphischen Auswahl wird nicht unterstützt! Verfügbar sind:"
+        },
+        "displayName": "Geometrie utwählen",
+        "selectByCircle": "Kreis optrecken",
+        "selectByPolygon": "Fläche teken",
+        "selectBySquare": "Rechteck optrecken",
+        "tooltipMessage": "Klicken zum Starten und Beenden",
+        "tooltipMessagePolygon": "Klicken um Stützpunkt hinzuzufügen"
+      },
+      "inputs": {
+        "fileUpload": {
+          "browse": "Datei utwählen",
+          "dropzone": "Datei hier ablegen",
+          "or": ""
+        }
+      },
+      "list": {
+        "pagination": "",
+        "replace": {
+          "no": "",
+          "true": ""
+        },
+        "selection": "",
+        "zoomToResult": "",
+        "zoomToResults": ""
+      }
+    }
+  }
+}

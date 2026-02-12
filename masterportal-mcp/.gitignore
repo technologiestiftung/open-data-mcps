@@ -1,0 +1,6 @@
+node_modules/
+dist/
+downloads/
+.env
+*.log
+.temp-download/

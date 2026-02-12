@@ -1,0 +1,39 @@
+{
+  "name": "berlin-opendata-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for natural language discovery of Berlin open data",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:http": "node dist/http-server.js",
+    "dev": "tsx src/index.ts",
+    "dev:http": "tsx src/http-server.ts",
+    "generate-expansions": "tsx scripts/generate-query-expansion.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@tmcw/togeojson": "^7.1.2",
+    "@types/geojson": "^7946.0.16",
+    "@xmldom/xmldom": "^0.8.11",
+    "axios": "^1.12.2",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "node-fetch": "^3.3.2",
+    "papaparse": "^5.5.3",
+    "proj4": "^2.20.2",
+    "puppeteer": "^24.26.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/papaparse": "^5.3.16",
+    "@types/proj4": "^2.5.6",
+    "@types/puppeteer": "^5.4.7",
+    "@types/xlsx": "^0.0.35",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

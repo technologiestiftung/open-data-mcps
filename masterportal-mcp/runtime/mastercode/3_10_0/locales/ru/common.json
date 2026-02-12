@@ -1,0 +1,977 @@
+{
+  "app-store": {
+    "loadServicesJsonFailed": "",
+    "loadStylev3JsonFailed": ""
+  },
+  "core": {
+    "layers": {
+      "errorHandling": {
+        "getGeometryTypeFromWFSFetchfailed": "Легенда не может быть создана в информации о слое!",
+        "getGeometryTypeFromWFSFetchfailedMessage": "Подробности: требуемый сервис не отвечает.",
+        "getGeometryTypeFromOAFFetchfailed": "Легенда не может быть создана в информации о слое!",
+        "getGeometryTypeFromOAFFetchfailedMessage": "Подробности: API не отвечает.",
+        "LinkMetadata": "",
+        "wrongStyleId": "",
+        "403": ""
+      },
+      "urlParamWarning": ""
+    },
+    "maps": {
+      "featureViaURL": {
+        "messages": {
+          "featureParsing": "FeatureViaURL: Не все переданные объекты могут быть обработаны.",
+          "featureParsingAll": "FeatureViaURL: Все переданные объекты были переданы не с правильным типом данных. Пожалуйста, обратите внимание на документацию.",
+          "featureParsingNoneAdded": "FeatureViaURL: Во всех переданных объектах отсутствует хотя бы один параметр. Никакие объекты на карту не добавлены. Пожалуйста, обратите внимание на документацию.",
+          "layerNotFound": "FeatureViaURL: Не удалось найти слой с идентификатором {{layerId}}.",
+          "noNameDefined": "FeatureViaURL: Для слоя с идентификатором {{layerId}} в конфигурации не определено имя."
+        }
+      },
+      "highlightFeaturesByAttribute": {
+        "messages": {
+          "configurationError": "",
+          "requestFailed": ""
+        }
+      }
+    }
+  },
+  "modules": {
+    "addWMS": {
+      "alertTitleSuccess": "",
+      "alreadyAdded": "",
+      "completeMessage": "&#9989; Слои запрашиваемой WMS были добавлены в тематическое дерево в пункте меню <strong>Внешние предметные данные</strong>!",
+      "errorHttpsMessage": " &#10060; Запрошенная вами WMS находится под http-URL. Мастер-портал может интегрировать WMS только через https (SSL).",
+      "errorMessage": "&#10060; Указанная служба не может быть загружена. Пожалуйста убедитесь, что URL-адрес введен правильно.<br><br> Если проблема остается, обратитесь к оператору сервиса со следующим советом:<br><strong>Необходимо убедиться, что для сервиса установлен заголовок CORS. Это рекомендуется от <a target='_blank' href='https://www.gdi-de.org/download/AK_Geodienste_Architektur_GDI-DE_Bereitstellung_Darstellungsdienste.pdf'>GDI-DE</a> в главе 4.7.1.</strong>",
+      "errorTitle": "",
+      "ifInExtent": "&#10060; Геоданные, предоставленные через WMS, находятся за пределами отображаемой области. Добавить WMS не представляется возможным",
+      "name": "Добавить веб-карту (WMS)",
+      "placeholder": "Пожалуйста, введите URL WMS здесь",
+      "textLoadLayer": "Загрузка слоя",
+      "examples": "Примеры:"
+    },
+    "alerting": {
+      "alertWindowTitle": "",
+      "categories": {
+        "error": "Ошибка",
+        "info": "Информация",
+        "news": "",
+        "success": "Успех",
+        "warning": "Внимание"
+      },
+      "created": "",
+      "hideMessage": "Не показывать это сообщение снова",
+      "showMessage": ""
+    },
+    "bufferAnalysis": {
+      "clearButton": "Сбросить",
+      "name": "Буфер (анализ)",
+      "notOverlapping": "За пределами радиусов",
+      "overlapping": "В пределах радиусов",
+      "rangeLabel": "Радиус (м)",
+      "resultTypeLabel": "Тип результата",
+      "saveButton": "Сохранить",
+      "sourceLayerNotFound": "Сохраненный исходный слой с идентификатором {{layerId}} не найден",
+      "sourceSelectLabel": "Источниковый слой",
+      "targetLayerNotFound": "Сохраненный целевой слой с идентификатором {{layerId}} не найден",
+      "targetSelectLabel": "Целевой слой"
+    },
+    "compareMaps": {
+      "description": "Сравнить две карты рядом друг с другом или одна на другой",
+      "firstLayer": "Первый слой",
+      "horizontal": "горизонтально",
+      "loadingWait": "Пожалуйста, подождите, инструмент загружает карты для сравнения",
+      "name": "Сравнить карты",
+      "reset": "Сбросить",
+      "sameLayerSelected": "Один и тот же слой был выбран дважды. Выделение было сброшено.",
+      "secondLayer": "Второй слой",
+      "selectLayerOneFirst": "Пожалуйста, сначала выберите первый слой",
+      "splitDirection": "Направление: ",
+      "vertical": "вертикально"
+    },
+    "contact": {
+      "addFileButton": "",
+      "error": {
+        "mail": "Пожалуйста, введите действительный адрес электронной почты",
+        "message": "Отправка письма не удалась!",
+        "messageInput": "Ваше сообщение по длине должно быть не менее {{length}} символов.",
+        "phone": "По какому номеру телефона мы можем с вами связаться?",
+        "username": "Пожалуйста, назовите Ваши фамилию и имя. "
+      },
+      "errorIncompleteDeclarations": "Пожалуйста, заполните все поля контактной формы правильно, чтобы ваш запрос мог быть отправлен.",
+      "fileFormatMessage": "",
+      "fileSizeMessage": "",
+      "mailSubject": "Запрос на поддержку портала",
+      "messageLabel": "Ваше сообщение",
+      "name": "Контакт",
+      "placeholder": {
+        "mail": "Ваш адрес электронной почты",
+        "message": "Пожалуйста, сформулируйте свой вопрос здесь и нажмите \"$t(common:modules.contact.sendButton)\".",
+        "phone": "Ваш номер телефона",
+        "username": "Ваше имя"
+      },
+      "privacyPolicy": {
+        "info": "Вы соглашаетесь, что ваши данные будут использованы для обработки вашего запроса. Дополнительную информацию и инструкции по отзыву можно найти в <a href=\"{{privacyPolicyLink}}\" target=\"_blank\">Политике конфиденциальности</a>.",
+        "label": "Пожалуйста, примите политику конфиденциальности."
+      },
+      "removeAttachment": "",
+      "sendButton": "Отправить",
+      "successMessage": "Ваш запрос успешно отправлен.",
+      "successTicket": "Ваш номер билета: "
+    },
+    "controls": {
+      "backForward": {
+        "stepBackward": "Последняя публикация",
+        "stepForward": "Следующая публикация"
+      },
+      "button3d": {
+        "buttonTitle2d": "2D",
+        "buttonTitle3d": "3D"
+      },
+      "fullScreen": {
+        "enable": "Активировать полный экран",
+        "disable": "Деактивировать полный экран"
+      },
+      "freeze": {
+        "freeze": "Заблокировать просмотр",
+        "unfreeze": "Разблокировать просмотр"
+      },
+      "orientation": {
+        "distanceUnit": "Метр",
+        "geolocationDeniedText": "Локализация недоступна",
+        "imgAlt": "Изображение для точки интереса",
+        "poiChoiceCurrentPosition": "Местонахождение",
+        "poiChoiceCustomPosition": "Поиск адреса или заданной точки на карте",
+        "poiChoiceConfirmation": "OK",
+        "poiChoiceStop": "Выйти",
+        "poiChoiceTitle": "Выберите начальную точку для поиска по радиусу:",
+        "titleGeolocate": "Позиция",
+        "titleGeolocatePOI": "Поблизости",
+        "trackingDeniedText": "'Поблизости' недоступно."
+      },
+      "totalView": {
+        "titleButton": "Возврат к главному экрану"
+      },
+      "zoom": {
+        "zoomIn": "Увеличить масштаб",
+        "zoomOut": "Уменьшить масштаб"
+      }
+    },
+    "coordToolkit": {
+      "cartesian": {
+        "eastingLabel": "ордината",
+        "northingLabel": "абсцисса"
+      },
+      "coordSystemField": "Координатная система",
+      "coordsCopied": "",
+      "copyCoordsBtn": "Копировать координатную пару",
+      "copyCoordBtn": " {{value}} копировать",
+      "copyToClipboard": {
+        "contentSaved": "Контент был скопирован в буфер обмена.",
+        "contentNotSaved": "Контент не может быть скопирован в буфер обмена."
+      },
+      "errorMsg": {
+        "example": "Пример: ",
+        "hdmsNoCoord": "Пожалуйста, введите ваше значение {{valueKey}} полностью.",
+        "hdmsNoMatch": "Ввод значения {{valueKey}} некорректен!",
+        "noCoord": "Пожалуйста, введите свой {{valueKey}} полностью.",
+        "noMatch": "Ввод для {{valueKey}} неверен!"
+      },
+      "exampleAcronym": "пример",
+      "hdms": {
+        "eastingLabel": "широта",
+        "northingLabel": "долгота"
+      },
+      "heightLabel": "высота",
+      "hintSearch": "Введите координаты для поиска",
+      "hintSupply": "Нажмите на карту, чтобы запросить координаты",
+      "influenceFactors": "",
+      "info": "",
+      "name": "Координаты",
+      "noHeightBuilding": "Площадь застройки, высота отсутствует",
+      "noHeightWater": "Водная поверхность, высота отсутствует",
+      "postionCoordinates": "",
+      "search": "Поиск координат",
+      "searchBtn": "Поиск",
+      "supply": "Запрос координат"
+    },
+    "draw": {
+      "name": "Чертить / писать"
+    },
+    "draw_old": {
+      "attributeSelect": {
+        "attributeDuplicatedKeyError": "",
+        "attributeKeyError": "",
+        "input": {
+          "key": "",
+          "value": ""
+        },
+        "noFeatureSelected": "",
+        "remove": "",
+        "save": ""
+      },
+      "button": {
+        "delete": "Удалить геометрию / текст",
+        "deleteAll": "Удалить всё",
+        "download": "скачать",
+        "draw": "Нарисовать геометрию / текст",
+        "edit": "Редактировать геометрию",
+        "editAttributes": "",
+        "redo": "Повторить",
+        "saveDrawing": "Сохранить чертеж",
+        "undo": "Вернуть обратно"
+      },
+      "clickToPlaceText": "Нажмите на карту, чтобы разместить текст",
+      "color": "Цвет заполнения",
+      "colorContour": "Цвет контура",
+      "colors": {
+        "black": "черный",
+        "blue": "синий",
+        "green": "зеленый",
+        "grey": "серый",
+        "orange": "оранжевый",
+        "red": "красный",
+        "white": "белый",
+        "yellow": "желтый"
+      },
+      "defined": "Определено",
+      "doubleCirclePlaceholder": "Пожалуйста, введите радиус",
+      "download": {
+        "enterFilename": "Пожалуйста, укажите название файла",
+        "filename": "Название файла",
+        "format": "Формат",
+        "pleaseChoose": "Пожалуйста, выберите",
+        "unknownGeometry": "Неизвестная геометрия: <strong>{{geometry}}</strong>"
+      },
+      "drawLayerVisible": "",
+      "drawTypeOptions": {
+        "drawArea": "Площадь",
+        "drawCircle": "Круг",
+        "drawCurve": "Свободная линия",
+        "drawDoubleCircle": "Двойной круг",
+        "drawLine": "Линии",
+        "drawSymbol": "Символ",
+        "writeText": "Text"
+      },
+      "fontName": "Тип шрифта",
+      "fontSize": "Размер шрифта",
+      "geometry": "Геометрия",
+      "geometryDrawFailed": "Передаваемая геометрия не может быть отображена.",
+      "iconList": {
+        "gelber Pin": "Желтый штифт",
+        "iconCloud": "Облако",
+        "iconLeaf": "Лист",
+        "iconMeadow": "Луг",
+        "iconPoint": "Пункт"
+      },
+      "innerColorContour": "Цвет внутреннего контура",
+      "innerRadius": "Внутренний радиус",
+      "interactive": "интерактивный",
+      "limitReached_one": "Вы уже нарисовали {{count}} объект, пожалуйста, удалите его перед продолжением!",
+      "limitReached_other": "Вы уже нарисовали {{count}} объекты, пожалуйста, удалите один, прежде чем продолжить!",
+      "lineWidth": "Толщина линии",
+      "method": "Метод",
+      "name": "Чертить / писать",
+      "outerColorContour": "Цвет внешнего контура",
+      "outerRadius": "Внешний радиус",
+      "radius": "Радиус",
+      "symbol": "Символ",
+      "text": "Текст",
+      "transparency": "Прозрачность",
+      "transparencyOutline": "Контур прозрачности",
+      "undefinedInnerCircle": "Пожалуйста, дайте также определение внутреннего круга.",
+      "undefinedOuterCircle": "Пожалуйста, определите также внешний круг.",
+      "undefinedRadius": "Пожалуйста, введите радиус.",
+      "undefinedTwoCircles": "Пожалуйста, определите оба круга.",
+      "unit": "Единица"
+    },
+    "featureLister": {
+      "chooseTheme": "Выбор темы",
+      "details": "Подробности",
+      "detailsOfSelected": "Подробная информация о выбранных объектах",
+      "key": "{{shownFeatures.x}} von {{shownFeatures.y}} перечисленные объекты",
+      "list": "Перечень",
+      "more": "Подробнее...",
+      "name": "Список",
+      "visibleVectorLayers": "Видимые векторные слои"
+    },
+    "fileImport": {
+      "alertingMessages": {
+        "featureError": "Oбъект в этом файле не может быть прочитана.",
+        "formatError": "Файл \"{{filename}}\" не может быть прочитан. Пожалуйста, проверьте, имеет ли файл формат *.kml. *.gpx, *.geojson или *.json.",
+        "missingFileContent": "Ошибка чтения файла \"{{filename}}\". Пожалуйста, проверьте тип файла, а также его содержимое. Если файл не содержит ошибок, обратитесь в службу поддержки.",
+        "missingFormat": "Формат файла {{format}} не поддерживается. Обратитесь в службу поддержки.",
+        "success": "Файл \"{{filename}}\" был импортирован успешно.",
+        "successPartly": "Файл \"{{filename}}\" был частично импортирован."
+      },
+      "captions": {
+        "drawTool": "$t(common:modules.draw.name) открыть",
+        "introDrawTool": "Импортированные геометрии могут быть изменены впоследствии. Используйте для этого инструмент &quot;$t(common:modules.draw.name)&quot;.",
+        "introFormats": "Можно импортировать файлы KML (*.kml), GPX (*.gpx) или GeoJson (*.geojson, *.json).",
+        "introInfo": "Импортируйте нужный файл простым перетаскиванием или через открытый диалог браузера.",
+        "supportedFiletypes": {
+          "auto": "Автоматическое распознавание",
+          "geojson": "GeoJson-файл (*.geojson, *.json)",
+          "gpx": "GPX-файл (*.gpx)",
+          "kml": "KML-файл (*.kml)"
+        }
+      },
+      "fileZoom": "",
+      "importFiles": "",
+      "name": "Импорт файлов",
+      "removeAttachment": "",
+      "successfullyImportedLabel": "Успешно импортировано:",
+      "zoom": ""
+    },
+    "filter": {
+      "alertingMessages": {
+        "noMatchingFilterId": ""
+      },
+      "ariaLabel": {
+        "checkbox": "Контрольный флажок для {{param}}",
+        "date": "Дата для {{param}}",
+        "dateRange": {
+          "from": "Дата начала от {{param}}",
+          "to": "Дата окончания с {{param}}"
+        },
+        "dropdown": "SelectBox для {{param}}",
+        "input": "Ввод для {{param}}",
+        "radio": "Радио для {{param}}",
+        "slider": "Слайдер range для {{param}}",
+        "sliderRange": {
+          "max": "Слайдер max для {{param}}",
+          "min": "Слайдер min для {{param}}"
+        }
+      },
+      "button": {
+        "confirm": "подтвердить",
+        "stop": "oтменить"
+      },
+      "download": {
+        "enterFilename": "Пожалуйста, укажите название файла",
+        "filename": "Название файла",
+        "format": "Формат",
+        "label": "",
+        "labelBtn": "",
+        "pleaseChoose": "Пожалуйста, выберите"
+      },
+      "dropdown": {
+        "deselectAll": "Отменить выбор всего",
+        "emptyList": "Список пуст",
+        "noElements": "Элементы не найдены",
+        "selectAll": "Выбрать всё"
+      },
+      "filterButton": "Фильтровать",
+      "filterResult": {
+        "disabledInfo": "",
+        "label": "Все попадания в фильтр",
+        "unit": "{{amountOfFilteredItems}} попаданиe"
+      },
+      "geometryFilter": {
+        "activate": "",
+        "buffer": "",
+        "geometries": {
+          "circle": "",
+          "lineString": "",
+          "polygon": "",
+          "rectangle": ""
+        },
+        "help": "",
+        "removeGeometry": "",
+        "selectGeometry": ""
+      },
+      "info": {
+        "snippetCheckbox": "Контрольный флажок можно активировать/деактивировать щелчком мышки.",
+        "snippetDate": "Чтобы ввести дату в качестве критерия поиска, щелкните в поле ввода даты и выберите дату из открытого календаря.",
+        "snippetDateRange": "Чтобы ввести диапазон дат в качестве критерия поиска, щелкните в поле ввода для начальной или конечной даты и выберите начальную или конечную дату из открытого календаря.",
+        "snippetDropdown": "Вы можете выбрать одно или несколько значений из заданного списка значений.",
+        "snippetInput": "Вы можете ввести желаемые критерии поиска в текстовое поле.",
+        "snippetSlider": "Чтобы ввести числовое значение в качестве критерия поиска, можно передвинуть слайдер вправо или влево. Кроме того, вы можете ввести значение непосредственно в поле ввода.",
+        "snippetSliderRange": "Чтобы ввести числовые значения в качестве минимального или максимального критерия поиска, можно передвинуть слайдер влево или вправо. Кроме того, вы можете вводить значения непосредственно в поля ввода."
+      },
+      "name": "Фильтр",
+      "searchInMapExtent": "Поиск в текущем разделе карты",
+      "slider": {
+        "valueEmptyErrorMessage": "Входное значение не должно быть пустым!",
+        "valueOutOfRangeErrorMessage": "Входное значение {{inputValue}} должно находиться в диапазоне значений {{minValueSlider}} и {{maxValueSlider}}.!"
+      },
+      "snippetTags": {
+        "resetAll": "сбросить",
+        "selectionText": "Ваш выбор:"
+      },
+      "upload": {
+        "geometryParseError": ""
+      }
+    },
+    "getFeatureInfo": {
+      "boolean": {
+        "0": "нет",
+        "1": "да",
+        "false": "нет",
+        "no": "нет",
+        "true": "да",
+        "yes": "да"
+      },
+      "buttonBack": "",
+      "buttonForward": "",
+      "errorMessage": "Произошла ошибка во время запроса информации (GetFeatureInfo).<br>Пожалуйста, повторите попытку позже. Если проблема сохраняется, обратитесь к оператору сервиса.",
+      "name": "Запрос информации",
+      "themes": {
+        "default": {
+          "imgAlt": "Не удалось загрузить изображение.",
+          "noAttributeAvailable": "Атрибут недоступен!"
+        },
+        "sensor": {
+          "chargingStations": {
+            "available": "Доступность",
+            "charging": "Использование мощностей",
+            "outoforder": "Вышел из строя"
+          },
+          "sensor": {
+            "dataName": "Данные",
+            "header": {
+              "description": "Описание",
+              "name": "Имя",
+              "ownerThing": "Владелец"
+            }
+          },
+          "sensorBarChart": {
+            "chartTitleAverage": "Среднее значение из",
+            "clock": "{{value}} Часы",
+            "month_one": "{{count}} Месяц",
+            "month_other": "{{count}} Месяцы",
+            "nextWeekday": "Следующий день недели",
+            "noticeTextAvailable": "(Учитываются только данные со значением available / доступно)",
+            "noticeTextCharging": "(Учитываются только данные со значением charging / загрузка.)",
+            "noticeTextOutoforder": "(Учитываются только данные со значением outoforder / не по порядку.)",
+            "previousWeekday": "Предыдущий день недели",
+            "year_one": "{{count}} Jahr",
+            "year_other": "{{count}} Год"
+          },
+          "sensorData": {
+            "firstColumnHeaderName": "Свойства"
+          }
+        }
+      }
+    },
+    "language": {
+      "de": "Deutsch",
+      "en": "English",
+      "es": "Español",
+      "it": "Italiano",
+      "name": "",
+      "platt": "Platt",
+      "pt": "Português",
+      "ru": "Русский",
+      "tr": "Türkçe",
+      "ua": "Українська",
+      "nl": "Nederlands"
+    },
+    "layerClusterToggler": {
+      "info": "",
+      "name": "Открыть группу слоев",
+      "toggle": ""
+    },
+    "layerInformation": {
+      "additionalMetadata": "Дополнительные метаданные",
+      "addressSuffix": "Адрес",
+      "attachFileMessage": "Приложите тип файла для загрузки, если применимо",
+      "downloadDataset": "Скачать набор данных",
+      "lastModified": "Последнее изменение",
+      "legend": "Легенда",
+      "name": "Информации и легенды",
+      "noMetadataLoaded": "Не удалось загрузить метаданные!",
+      "periodicityTitle": "Обновление данных",
+      "publicationCreation": "Публикация / создание"
+    },
+    "layerPills": {
+      "next": "",
+      "previous": "",
+      "remove": ""
+    },
+    "layerSelection": {
+      "addSelectedSubjectsToMap": "",
+      "addSubject": "",
+      "name": "Выбор темы",
+      "baselayers": "",
+      "selectAll": "",
+      "selectedSubjectsCount_one": "",
+      "selectedSubjectsCount_other": ""
+    },
+    "layerSlider": {
+      "displayLayers": "Отображение различных слоев.",
+      "name": "Временной ряд (time series)",
+      "serviceOne": "Сервис 1",
+      "serviceTwo": "Сервис 2",
+      "serviceThree": "Сервис 3",
+      "serviceFour": "Сервис 4",
+      "sliderTypeHandle": "",
+      "sliderTypePlayer": "",
+      "title": "Моделирование примера WMS",
+      "titleNotConfigured": "Заголовок не настроен"
+    },
+    "layerTree": {
+      "addLayer": "",
+      "categoryInspire": "",
+      "categoryOpendata": "",
+      "categoryOrganisation": "",
+      "iconRemoveLayer": "",
+      "iconSubMenu": "",
+      "iconTransparency": "",
+      "infosAndLegend": ""
+    },
+    "legend": {
+      "linkToPdf": "К внешней легенде (PDF)",
+      "name": "Легенда",
+      "noLegendForLayerInfo": "Легенда недоступна"
+    },
+    "login": {
+      "login": "Login",
+      "description": "Войдите в систему, используя свое имя пользователя и пароль",
+      "descriptionLoggedIn": "Вы вошли в систему",
+      "logout": "Logout",
+      "progress": "Пожалуйста, авторизуйтесь в открывшемся всплывающем окне",
+      "name": "Имя",
+      "email": "Email",
+      "profile": "Profile"
+    },
+    "measure": {
+      "area": "Территория",
+      "deleteMeasurements": "Удалить измерения",
+      "finishWithDoubleClick": "Закрыть двойным щелчком мышки",
+      "geometry": "Геометрия",
+      "influenceFactors": "Отображаемые значения подвержены неточностям, на которые влияют, в частности, следующие факторы, как например- масштаб, разрешение карты и экрана.",
+      "inputAccuracy": "Точность ввода и количество оцифрованных точек",
+      "measure": "Единица",
+      "measureDistance": "Расстояние линии измерения или размер области измерения",
+      "name": "Mediação distância / área",
+      "resolution": "Разрешение карты",
+      "scale": "Масштаб",
+      "screenResolution": "Разрешение экрана",
+      "stretch": "Маршрут"
+    },
+    "menu": {
+      "ariaLabelClose": "",
+      "ariaLabelOpen": "",
+      "name": "Меню"
+    },
+    "mouseHover": {
+      "infoText": "(Дополнительные объекты. Пожалуйста увеличьте.)"
+    },
+    "news": {
+      "headline": "",
+      "name": ""
+    },
+    "openConfig": {
+      "explanation": "",
+      "loadFileFailed": "",
+      "loadFileSuccess": "",
+      "name": "",
+      "openFile": ""
+    },
+    "portalFooter": {
+      "designation": "Картография и дизайн:",
+      "mapDiscrepancy": "Несоответствие карт",
+      "scale": "Масштабирование карты"
+    },
+    "print": {
+      "alertMessage": "Превышено максимальное количество параллельных распечаток.<br>Попробуйте еще раз, как только создание других распечаток будет завершено.",
+      "authorLabel": "",
+      "autoAdjustScale": "Автоматическая настройка масштаба печати",
+      "createDownloadFile": "Будет создано...",
+      "downloadFile": "Скачать",
+      "dpiLabel": "DPI",
+      "errorMessage": "",
+      "formatLabel": "Формат",
+      "hintInfoScale": "Выбранный масштаб печати отличается от масштаба в окне карты. Это может привести к изменению расположения карты при печати.",
+      "invisibleLayer": "Следующие объекты не могут быть напечатаны в выбранном масштабе печати {{scale}}:",
+      "layoutLabel": "Макет",
+      "name": "Распечатать карту",
+      "outputfileTitleLabel": "",
+      "printLabel": "Создать файл",
+      "scaleLabel": "Масштаб печати",
+      "subtitleLabel": "",
+      "textFieldLabel": "",
+      "titleLabel": "Заголовок",
+      "validationWarning": "",
+      "vtlWarning": "Поскольку MapFish 3 не поддерживает слои Vector Tile, следующие активные слои не будут отображаться в представлении печати:",
+      "waitForPrintErrorMessage": "Не удалось создать распечатку.<br>Пожалуйста, повторите попытку время спустя или свяжитесь с оператором портала.",
+      "withInfoLabel": "С информацией",
+      "withLegendLabel": "С легендой"
+    },
+    "routing": {
+      "addWaypoint": "Добавить путевой пункт",
+      "avoidOptions": {
+        "FERRIES": "Паромы",
+        "header": "Избегайте маршрутов движения транспорта",
+        "HIGHWAYS": "Автомагистраль",
+        "TOLLWAYS": "Платные дороги",
+        "STEPS": "Лестницы",
+        "UNPAVEDROADS": "грунтовые дороги",
+        "MIXEDTRAFFIC": "смешанное движение Speed 50",
+        "COBBLESTONE": "булыжник",
+        "NARROWWAYS": "узкие пути"
+      },
+      "batchProcessing": {
+        "cancel": "Отмена пакетной обработки данных",
+        "example": "Пример",
+        "header": "Пакетная обработка данных",
+        "isProcessing": "Выполняется пакетная обработка данных",
+        "placeFile": "Сохранить файл здесь",
+        "structure": "Структура",
+        "uploadFile": "Загрузить файл"
+      },
+      "coordinateInputHelp": "Поиск места или добавление точки путем нажатия на карту",
+      "deleteWaypoint": "Удалить путевой пункт",
+      "directions": {
+        "batchProcessing": {
+          "downloadHeader": {
+            "distance": "Расстояние (м)",
+            "profile": "Профиль",
+            "time": "Время(min)",
+            "xEnd": "X-значение_конец",
+            "xStart": "X-значение_начало",
+            "yEnd": "Y-значение_конец",
+            "yStart": "Y-значение_начало"
+          },
+          "errorNoEntries": "Отсутствие записей в CSV",
+          "errorRowContainsEntriesNoNumber": "Координаты в строке {{row}} не содержат чисел",
+          "errorSomeFailed": "Результаты не могут быть рассчитаны правильно {{countFailed}}. Результирующий файл содержит пустые ячейки в этих местах.",
+          "errorToManyEntriesInFile": "Превышено максимальное количество строк ({{limit}})",
+          "errorToManyEntriesInRow": "Строка {{row}} содержит более 5 записей, обратите внимание на структуру (ID;lon(Начальная точка);lat(Начальная точка);lon(Конечная точка);lat(Конечная точка))",
+          "structure": "ID;lon(Отправная точка);lat(Отправная точка);lon(Конечная точка);lat(Конечная точка)"
+        },
+        "deleteRestrictedAreas": "Запретные зоны удалить",
+        "editRestrictedAreas": "Запретные зоны рисовать/редактировать",
+        "keepRoutesAfterClose": "Сохранить маршрут после закрытия инструмента",
+        "preference": {
+          "RECOMMENDED": "Рекомендуемый маршрут",
+          "SHORTEST": "Кратчайший маршрут"
+        },
+        "preferenceLabel": "",
+        "restrictedAreas": "Запретные зоны",
+        "GREEN": "Зеленый маршрут"
+      },
+      "download": {
+        "filename": "Имя файла",
+        "filenamePlaceholder": "Пожалуйста, укажите имя файла",
+        "format": "Формат",
+        "header": "Скачать",
+        "saveResult": "Сохранить результат"
+      },
+      "endpoint": "Пункт назначения",
+      "errors": {
+        "avoidAreaBig": "Указанные запретные зоны слишком велики. Пожалуйста, исправьте свою запись.",
+        "errorIsochronesFetch": "Ошибка при запросе доступности",
+        "errorRouteFetch": "Ошибка при запросе маршрута",
+        "fetchingCoordinates": "Ошибка при запросе координат",
+        "noRouteFound": "К сожалению, маршрут не удалось найти"
+      },
+      "isochrones": {
+        "batchProcessing": {
+          "errorNoEntries": "Отсутствие записей в CSV",
+          "errorRowContainsEntriesNoNumber": "Координаты в строке {{row}} не содержат чисел",
+          "errorSomeFailed": "Не удалось вычислить {{countFailed}} Результаты не могут быть рассчитаны правильно. Результирующий файл содержит пустые ячейки в этих местах.",
+          "errorToManyEntriesInFile": "Превышено максимальное количество строк ({{limit}})",
+          "errorToManyEntriesInRow": "Строка {{row}} содержит более 3 записей, обратите внимание на структуру (ID;lon(Начальная точка);lat(Начальная точка))",
+          "structure": "ID;lon(Начальная точка);lat(Начальная точка)"
+        },
+        "calculate": "Рассчитать",
+        "interval": "Интервал",
+        "legend": "Легенда",
+        "maxDistance": "Максимальное расстояние",
+        "maxTraveltime": "Максимальная продолжительность поездки",
+        "optimization": {
+          "DISTANCE": "Доступность по расстоянию",
+          "TIME": "Доступность по времени"
+        },
+        "optimizeHeader": "Оптимизация согласно",
+        "startpoint": "Начальная точка"
+      },
+      "moveWaypointDown": "Переместить путевой пункт вниз",
+      "moveWaypointUp": "Переместить путевой пункт вверх",
+      "name": "Маршрутизация",
+      "resetSettings": "Сбросить настройки",
+      "speedprofiles": {
+        "CAR": "Легковые автомобили",
+        "CYCLING": "Велосипеды",
+        "FOOT": "Пешеходы",
+        "HGV": "Грузовые автомобили",
+        "WHEELCHAIR": "Инвалидные коляски"
+      },
+      "startpoint": "Исходная точка",
+      "tabs": {
+        "DIRECTIONS": "Планирование маршрута",
+        "ISOCHRONES": "Доступность"
+      },
+      "waypoint": "Путевой пункт"
+    },
+    "scaleSwitcher": {
+      "label": "Масштаб",
+      "name": "Переключить масштаб"
+    },
+    "searchBar": {
+      "locationFinder": {
+        "errorMsg": "Поиск через LocationFinder не удался",
+        "serverError": "Ошибка во время обработки запроса на стороне сервера",
+        "unknownProjection": "Результаты в неизвестной системе координат"
+      },
+      "placeholder": {
+        "address": "Поиск по адресу",
+        "addressDistrict": "",
+        "addressHospitalBplan": "Поиск по адресу/больнице/плану",
+        "addressTopic": "Поиск адрес, район, темы",
+        "addressTopicParcel": "Поиск адрес, район, субъект, земельный участок"
+      },
+      "showAllResults": "Показать все результаты",
+      "searchResults": "результаты поиска",
+      "search": "Искать",
+      "searchResultList": "обзор поиска",
+      "searchResultsFrom": "Результаты поиска из: ",
+      "mark": "Отметить тему",
+      "add": "Добавить тему",
+      "type": {
+        "address": "Адрес",
+        "district": "Район",
+        "folder": "",
+        "general": "",
+        "location": "",
+        "parcel": "Земельный участок",
+        "street": "Улица",
+        "subject": "Тема (внешние тематические данные)",
+        "topic": "Тема (тематические данные)"
+      },
+      "specialWFS": {
+        "ongoing": "В процессе",
+        "terminated": "Найдено",
+        "hazardous": "Операция в случае инцидента",
+        "childcare": "Детский сад",
+        "bplan": "План мероприятий по развитию"
+      },
+      "noInitialResults": "Первоначальный поиск не дал результатов.",
+      "showAll": "Показать все"
+    },
+    "selectFeatures": {
+      "name": "Выбор объектов",
+      "noFeatureChosen": "Не выбрано ни одной функции. Выберите функции, удерживая клавишу Ctrl и перетаскивая рамку вокруг нужных функций, или добавьте отдельные функции, удерживая клавишу Ctrl и щелкая левой кнопкой мыши.",
+      "propertylessFeature": "Элемент без атрибутов",
+      "clearSelection": "Очистить выбор",
+      "deselectFeature": "Отменить выбор объекта",
+      "zoomToFeature": "Увеличьте масштаб этого объекта"
+    },
+    "shadow": {
+      "name": "Тень",
+      "pickDate": "",
+      "shadowDisplayOff": "",
+      "shadowDisplayOn": "",
+      "slideHour": "",
+      "withInfoLabel": ""
+    },
+    "shareView": {
+      "downloadQR": "",
+      "myMap": "",
+      "name": "",
+      "share": "",
+      "shareFacebook": "",
+      "shareHeadline": "",
+      "shareLink": "",
+      "shareQR": "",
+      "shareTwitter": "",
+      "linkCopied": ""
+    },
+    "styleVT": {
+      "chooseTheme": "Пожалуйста, выберите активную тему",
+      "introText": "К слоям VectorTiles можно применять различные предопределенные стили, чтобы оптимизировать вид для конкретной цели применения.",
+      "name": "Стиль векторной плитки для слоев",
+      "noStyleableLayers": "В настоящее время не существует тем, к которым можно было бы применить этот инструмент",
+      "style": "Стиль",
+      "theme": "Тема"
+    },
+    "wfsSearch": {
+      "district": "Район",
+      "fieldSelectionLabel": "",
+      "instancesSelectLabel": "Выбор инстанции",
+      "name": "Поиск службы веб-функций",
+      "noResults": "По вашему критерию поиска результатов не найдено. Пожалуйста, попробуйте еще раз.",
+      "optionsPlaceholder": "Пожалуйста, выберите вариант!",
+      "parcelNumber": "Номер земельного участка",
+      "parcelSearch": "Поиск земельного участка",
+      "resetButton": "Сбросить",
+      "searchButton": "Поиск",
+      "searchError": "Ошибка при поиске объектов: {{error}}.",
+      "showResults_one": "",
+      "showResults_other": "Показать результаты",
+      "userHelp": {
+        "and": "и",
+        "label": "Информация о результатах поиска",
+        "or": "или",
+        "text": "По результатам поиска будут определены условия  / Клаузулы {{userHelp}}. <br /> *Обязательное поле"
+      },
+      "wrongConfig": "Слой с Id \"{{id}}\" экземпляра поиска \"{{title}}\" не определен."
+    },
+    "wfst": {
+      "deleteInteraction": {
+        "headline": "",
+        "text": ""
+      },
+      "error": {
+        "allLayersNotSelected": "",
+        "geometryOutOfRange": "",
+        "layerNotConfiguredCorrectly": "",
+        "layerNotSelected": "",
+        "noFeature": "",
+        "onlyNumbersAllowed": "",
+        "requiredPropertiesNotSet": ""
+      },
+      "form": {
+        "discard": "",
+        "save": ""
+      },
+      "interactionSelect": {
+        "delete": "",
+        "line": "",
+        "point": "",
+        "polygon": "",
+        "update": ""
+      },
+      "layerSelectLabel": "",
+      "name": "Инстумент веб-сервис с транзакциями (WFS-T- Tool)",
+      "polygonHint": "",
+      "transaction": {
+        "error": {
+          "axios": "",
+          "InvalidParameterValue": "",
+          "MissingParameterValue": "",
+          "OperationNotSupported": "",
+          "OperationParsingFailed": "",
+          "OperationProcessingFailed": ""
+        },
+        "success": {
+          "baseSuccess": "",
+          "delete": "",
+          "insert": "",
+          "update": ""
+        }
+      }
+    },
+    "wmsTime": {
+      "layerSwiper": {
+        "description": "Свайпер можно перемещать с помощью мыши или клавиш со стрелками на клавиатуре. При использовании клавиш со стрелками свайпер перемещается {{amount}} в соответствующем направлении..",
+        "title": "Сравнить слои"
+      },
+      "timeSlider": {
+        "buttons": {
+          "backward": "Один срок назад",
+          "deactivateLayerSwiper": "Удалить слой",
+          "forward": "Один срок вперёд",
+          "layerSwiper": "Сравнение сроков",
+          "play": "Автоматическое воспроизведение всех временных точек, начиная с текущей выбранной временной точки"
+        },
+        "inputRangeLabel": "Выберите время"
+      }
+    }
+  },
+  "shared": {
+    "js": {
+      "api": {
+        "cswParser": {
+          "annually": "ежегодно",
+          "asNeeded": "при необходимости",
+          "biannually": "дважды в год",
+          "continual": "последовательно",
+          "daily": "ежедневно",
+          "fortnightly": "каждые 2 недели",
+          "irregular": "нерегулярные интервалы",
+          "monthly": "ежемесячно",
+          "notPlanned": "не запланировано",
+          "quarterly": "ежеквартально",
+          "unknown": "неизвестно",
+          "weekly": "еженедельно"
+        }
+      },
+      "utils": {
+        "buildings": "Здание",
+        "selectedFeatures": ""
+      }
+    },
+    "modules": {
+      "buttons": {
+        "download": "скачать",
+        "error": {
+          "download": ""
+        }
+      },
+      "draw": {
+        "drawEdit": {
+          "delete": "Удалить геометрию / текст",
+          "deleteAll": "Удалить всё",
+          "modify": "Редактировать геометрию",
+          "redo": "Повторить",
+          "undo": "Вернуть обратно"
+        },
+        "drawLayout": {
+          "fillColor": "Цвет заполнения",
+          "fillTransparency": "Прозрачность",
+          "innerCircle": "",
+          "outerCircle": "",
+          "strokeColor": "Цвет контура",
+          "strokeWidth": "Толщина линии",
+          "extrudedHeight": "Высота экструдирования"
+        },
+        "drawSettingsCircle": {
+          "interactive": "интерактивный",
+          "radii": {
+            "innerRadius": "Внутренний радиус",
+            "outerRadius": "Внешний радиус",
+            "radius": "Радиус"
+          },
+          "settings": {
+            "circle": "",
+            "doubleCircle": ""
+          },
+          "unit": "Единица"
+        },
+        "drawTypes": {
+          "box": "",
+          "circle": "Круг",
+          "doubleCircle": "Двойной круг",
+          "geometries": "",
+          "line": "Линии",
+          "pen": "",
+          "point": "",
+          "polygon": "Площадь",
+          "прямоугольник": "прямоугольник",
+          "symbols": "Символ"
+        }
+      },
+      "graphicalSelect": {
+        "alert": {
+          "notSupportedElement": "Шаблонный элемент выбора графики не поддерживается! В наличии имеются:",
+          "notSupportedOption": "Выбор графики содержит неподдерживаемые элементы! В наличии имеются:",
+          "notSupportedSelection": "SelectedOption графического выбора не поддерживается! В наличии имеются:"
+        },
+        "displayName": "Выберите геометрию",
+        "selectByCircle": "Нарисуйте круг",
+        "selectByPolygon": "Нарисуйте площадь",
+        "selectBySquare": "Нарисуйте прямоугольник",
+        "tooltipMessage": "Нажмите для запуска и остановки",
+        "tooltipMessagePolygon": "Нажмите, чтобы добавить основание"
+      },
+      "inputs": {
+        "fileUpload": {
+          "browse": "Выбрать файл",
+          "dropzone": "Файл отложить здесь",
+          "or": ""
+        }
+      },
+      "list": {
+        "pagination": "Страница с результатами",
+        "replace": {
+          "no": "нет",
+          "true": "да"
+        },
+        "selection": "",
+        "zoomToResult": "Увеличение результата",
+        "zoomToResults": ""
+      }
+    }
+  }
+}

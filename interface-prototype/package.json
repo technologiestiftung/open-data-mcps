@@ -1,0 +1,31 @@
+{
+  "name": "interface-prototype",
+  "version": "1.0.0",
+  "description": "Web interface for Berlin Open Data MCP server",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "install-all": "npm install",
+    "dev": "concurrently --names \"backend,frontend\" --prefix-colors \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build": "npm run build:backend && npm run build:frontend",
+    "test": "npm test --workspaces"
+  },
+  "keywords": [
+    "mcp",
+    "berlin",
+    "open-data",
+    "chat"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

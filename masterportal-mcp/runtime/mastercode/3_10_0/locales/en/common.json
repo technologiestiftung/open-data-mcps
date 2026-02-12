@@ -1,0 +1,1515 @@
+{
+  "app-store": {
+    "loadServicesJsonFailed": "<strong>The file {{layerConf}} could not be loaded!</strong>",
+    "loadStylev3JsonFailed": "<strong>The file {{style_v3}}  could not be loaded!</strong></br>Please check the configuration 'styleConf' in config.js."
+  },
+  "core": {
+    "layers": {
+      "errorHandling": {
+        "getGeometryTypeFromWFSFetchfailed": "The legend could not be created in the layer information!",
+        "getGeometryTypeFromWFSFetchfailedMessage": "Details: A required service is not responding.",
+        "getGeometryTypeFromOAFFetchfailed": "The legend could not be created in the layer information!",
+        "getGeometryTypeFromOAFFetchfailedMessage": "Details: The API is not available.",
+        "LinkMetadata": "Contact details and further information can be found <a href={{linkMetadata}} target=\"_blank\">here</a>.",
+        "wrongStyleId": "No style object could be found with the specified StyleId: {{styleId}}. Please make sure that a style with the StyleId: {{styleId}} is configured in the Style.json used.",
+        "wrongLayerId": "Layer with ID: {{layerId}} not found. Please check the ID.",
+        "403": "<strong>Access to {{layerName}}is not possible!</strong></br>Unfortunately, you are not authorised to view the data for {{layerName}}. The topic has been automatically deactivated.</br></br>Please contact the office responsible for this data for access authorisation.</br></br>"
+      },
+      "urlParamWarning": "The parameterized call is incorrect. The layer with the id: <b>{{layerId}}</b> does not exist and will be ignored."
+    },
+    "maps": {
+      "mapRegion": {
+        "twoFingerPanAlert": "Please use two fingers to pan and zoom in the map."
+      },
+      "featureViaURL": {
+        "messages": {
+          "featureParsing": "FeatureViaURL: Not all features from the URL could be parsed.",
+          "featureParsingAll": "FeatureViaURL: The features weren't given in the correct datatype. Please refer to the documentation.",
+          "featureParsingNoneAdded": "FeatureViaURL: All given features miss atleast on parameter. No features were added to the Map. Please refer to the documentation.",
+          "layerNotFound": "FeatureViaURL: The layer with the id {{layerId}} was not found.",
+          "noNameDefined": "FeatureViaURL: No name was defined for the layer with the id {{layerId}}."
+        }
+      },
+      "highlightFeaturesByAttribute": {
+        "messages": {
+          "configurationError": "Configuration error. Please check the console messages.",
+          "requestFailed": "Request failed."
+        }
+      }
+    }
+  },
+  "modules": {
+    "about": {
+      "additionalMetadata": "additional metadata...",
+      "contact": "Contact:",
+      "description": "Learn about this portal",
+      "name": "About this Portal",
+      "noMetadataLoaded": "No metadata could be loaded!",
+      "version": "Version: ",
+      "ustId": "Sales tax identification number in accordance with Section 27 of the Sales Tax Act:",
+      "imprintTitle": "Imprint",
+      "privacyStatementText": "Privacy policy and general information on the implementation of the data protection regulations of Articles 12 to 14 of the General Data Protection Regulation at the Agency for Geoinformation and Surveying of the Free and Hanseatic City of Hamburg:",
+      "privacyStatement": "Data privacy policy",
+      "accessibilityText": "Declaration on accessibility with regard to Section 11 of the Hamburg Act on Equal Opportunities for Persons with Disabilities (Hamburg Disability Equality Act - HmbBGG) of 19 December 2019:",
+      "accessibilityStatement": "Accessibility statement",
+      "contactButton": "Get in contact"
+    },
+    "addWMS": {
+      "alertTitleSuccess": "Layer added successfully",
+      "alreadyAdded": "The layers of the requested WMS have already been added.",
+      "completeMessage": "The layers of the requested WMS were added to the topic tree and can be selected via <b>Add layer</b>!",
+      "description": "Add a Web Map Service (WMS) to the topic tree",
+      "errorHttpsMessage": "&#10060; The WMS you requested is located under a http-url. The master portal can only integrate WMS via https (SSL).",
+      "errorMessage": "&#10060; The specified service could not be loaded. Please make sure that the URL was entered correctly.<br><br> If the problem persists, please contact the operator of the service with the following note:<br><strong>It should be ensured that a CORS header is set for the service. This is recommended by the <a target='_blank' href='https://www.gdi-de.org/download/AK_Geodienste_Architektur_GDI-DE_Bereitstellung_Darstellungsdienste.pdf'>GDI-DE</a> in chapter 4.7.1.</strong>",
+      "errorTitle": "Layer could not be added",
+      "ifInExtent": "&#10060; The geodata provided via the WMS are outside the displayable range. Adding WMS is not possible.",
+      "name": "Add WMS",
+      "placeholder": "Please enter the WMS-URL here.",
+      "textLoadLayer": "Load layer",
+      "examples": "Examples:"
+    },
+    "alerting": {
+      "alertWindowTitle": "Information",
+      "categories": {
+        "error": "Error",
+        "info": "Info",
+        "news": "News",
+        "success": "Success",
+        "warning": "Warning"
+      },
+      "created": "Created: ",
+      "hideMessage": "Don't show this message again",
+      "showMessage": "Show this message again"
+    },
+    "aria": {
+      "sliderAria": "Slider for "
+    },
+    "button": {
+      "confirm": "Confirm",
+      "stop": "Cancel"
+    },
+    "bufferAnalysis": {
+      "clearButton": "Reset",
+      "description": "Find out what is within a radius of an object",
+      "name": "Buffer Analysis",
+      "notOverlapping": "outside radius",
+      "overlapping": "inside radius",
+      "rangeLabel": "radius (m)",
+      "resultTypeLabel": "result type",
+      "saveButton": "Copy link",
+      "sourceLayerNotFound": "The saved source layer with ID {{layerId}} was not found",
+      "sourceSelectLabel": "source layer",
+      "targetLayerNotFound": "The saved target layer with the ID {{layerId}} was not found",
+      "targetSelectLabel": "target layer"
+    },
+    "compareMaps": {
+      "description": "Compare two maps side by side or on top of each other",
+      "firstLayer": "First Layer",
+      "horizontal": "horizontal",
+      "loadingWait": "Please wait, the tool is loading the comparison maps",
+      "name": "Compare Maps",
+      "reset": "Reset",
+      "sameLayerSelected": "The same layer has been selected twice. The selection has been reset.",
+      "secondLayer": "Second Layer",
+      "selectLayerOneFirst": "Please select the first layer first",
+      "splitDirection": "Direction: ",
+      "vertical": "vertical"
+    },
+    "contact": {
+      "addFileButton": "Add attachment",
+      "description": "Ask questions about this portal or report bugs",
+      "error": {
+        "mail": "Please input a valid E-mail address",
+        "message": "Sending Email failed!",
+        "messageInput": "Your message has to be at least {{length}} characters long.",
+        "phone": "Please input your phone number",
+        "username": "Please input your name"
+      },
+      "errorIncompleteDeclarations": "Please fill out all fields of the contact form correctly so that your request can be sent.",
+      "fileFormatMessage": "The attached file is not in the correct format. Allowed formats are: .jpg, .jpeg, .png and .pdf",
+      "fileSizeMessage": "The attached file exceeds the specified file size: ",
+      "fileSizeSumMessage": "The attached files exceed the maximum total upload size allowed.",
+      "fileDuplicatedMessage": "Not possible to add. This file is already attached: ",
+      "mailSubject": "Support request for the portal ",
+      "messageLabel": "Your message",
+      "name": "Contact us",
+      "placeholder": {
+        "mail": "Your E-mail Address",
+        "message": "Please write down your message in here and press \"$t(common:modules.contact.sendButton)\".",
+        "phone": "Your phone number",
+        "username": "Your name"
+      },
+      "privacyPolicy": {
+        "info": "You agree that your data may be used to process your request. You will find further information and revocation notices in the <a href=\"{{privacyPolicyLink}}\" target=\"_blank\">privacy policy</a>.",
+        "label": "Please accept the privacy policy."
+      },
+      "removeAttachment": "Remove file",
+      "sendButton": "Contact us",
+      "successMessage": "Your request was sent successfully.",
+      "successTicket": "Your ticket number is: ",
+      "infoMessage": "Please write to us if you have any tips, questions or problems!"
+    },
+    "controls": {
+      "backForward": {
+        "stepBackward": "Last view",
+        "stepForward": "Next view"
+      },
+      "button3d": {
+        "buttonTitle2d": "2D",
+        "buttonTitle3d": "3D"
+      },
+      "fullScreen": {
+        "enable": "Enable fullscreen",
+        "disable": "Disable fullscreen"
+      },
+      "freeze": {
+        "freeze": "Freeze view",
+        "unfreeze": "Unfreeze view"
+      },
+      "orientation": {
+        "distanceUnit": "meters",
+        "geolocationDeniedText": "Localisation is not available",
+        "imgAlt": "picture for point of interest",
+        "poiChoiceCurrentPosition": "Current location",
+        "poiChoiceCustomPosition": "Search address or set point in map",
+        "poiChoiceClickPoint": "Set point in map",
+        "poiChoiceConfirmation": "OK",
+        "poiChoiceStop": "Quit",
+        "poiChoiceTitle": "Select starting point for radius search:",
+        "titleGeolocate": "Common position",
+        "titleGeolocatePOI": "Close to here (linear distance)",
+        "trackingDeniedText": "'Close to here' is not available."
+      },
+      "rotation": {
+        "reset": "Reset rotation",
+        "rotateClockwise": "Rotate clockwise",
+        "rotateCounterClockwise": "Rotate counterclockwise",
+        "compass": {
+          "pointerNorth": "Rotate view",
+          "moveNorth": "Move north",
+          "moveSouth": "Move south",
+          "moveWest": "Move west",
+          "moveEast": "Move east"
+        }
+      },
+      "tiltView": {
+        "downButton": "Tilt view down",
+        "upButton": "Tilt view up"
+      },
+      "totalView": {
+        "titleButton": "Back to home screen"
+      },
+      "zoom": {
+        "zoomIn": "Zoom In",
+        "zoomOut": "Zoom Out"
+      }
+    },
+    "compareFeatures": {
+      "title": "Comparison list",
+      "description": "Compare selected objects in the table.",
+      "topicsSelection": "Topics selection",
+      "removeFromList": "Remove from list",
+      "noFeatures": {
+          "nothingSelected": "There are no {{objects}} selected for the comparison list.",
+          "objectName": "objects",
+          "info": "Click on an object on the map. A window opens with the respective factual information. In the upper right corner there is a star symbol {{iconEmptyStar}}. Click on this icon to add the object to the comparison list. The star icon will be colored yellow {{iconYellowStar}}. Click the star icon again to remove the object from the comparison list. ",
+          "info2": "Once an object is added to the comparison list, it will appear in the table, allowing you to easily compare it with other objects. To remove an object, you can also simply click the 'X' next to it on the left side of the table."
+
+      },
+      "feedback": {
+          "added": "The feature was added to the comparison list",
+          "addedWithName": "{{currentFeatureName}} was added to the comparison list",
+          "notAdded": "The feature could not be added to the comparison list",
+          "notAddedWithName": "{{currentFeatureName}} could not be added to the comparison list",
+          "limitReached": "The maximum number of objects in the comparison list has been reached.",
+          "removeObjects": "Please remove at least one object before proceeding.",
+          "goToComparisonlist": "To the comparison list"
+      },
+      "trueFalse": {
+          "true": "Yes",
+          "false": "No"
+      }
+  },
+    "coordToolkit": {
+      "cartesian": {
+        "eastingLabel": "Easting",
+        "northingLabel": "Northing"
+      },
+      "coordSystemField": "Coordinate reference system",
+      "coordsCopied": "The coordinate(s) were copied to the clipboard.",
+      "coordsPair": "Pair of coordinates",
+      "copyCoordBtn": " Copy {{value}}",
+      "copyCoordsBtn": "Copy pair of coordinates",
+      "copyToClipboard": {
+        "contentSaved": "Content was copied to the clipboard.",
+        "contentNotSaved": "Content could not be copied to the clipboard."
+      },
+      "description": "Determine coordinates from the map or search for coordinates.",
+      "errorMsg": {
+        "example": "Example: ",
+        "hdmsNoCoord": "Please enter your value for the {{valueKey}}.",
+        "hdmsNoMatch": "Your chosen value for the {{valueKey}} is not correct!",
+        "noCoord": "Please enter your {{valueKey}}.",
+        "noMatch": "Your chosen {{valueKey}} is not correct!"
+      },
+      "exampleAcronym": "e.g. ",
+      "hdms": {
+        "eastingLabel": "Latitude",
+        "northingLabel": "Longitude"
+      },
+      "heightLabel": "Height",
+      "hintSearch": "Enter the coordinates to search for",
+      "hintSupply": "Please click the map",
+      "influenceFactors": "The displayed values are subject to inaccuracies that are influenced by the following factors, among others, e.g. scale, resolution of the map and the screen.",
+      "info": "Information",
+      "name": "Coordinates",
+      "noHeightBuilding": "Building area, no heights available",
+      "noHeightWater": "Water surface, no heights available",
+      "postionCoordinates": "Location Coordinates",
+      "search": "Search Coordinates",
+      "searchBtn": "Search",
+      "supply": "Query Coordinates / Height",
+      "utm": {
+        "eastingLabel": "Easting",
+        "northingLabel": "Northing"
+      }
+    },
+    "copyrightConstraints": {
+      "name": "Copyright notices",
+      "info": "Please note the usage information for the geodata used",
+      "notSpecified": "Not specified, please contact",
+      "contactOrganisation": "Organization",
+      "contactName": "Name",
+      "contactPhone": "Phone",
+      "contactEmail": "E-Mail",
+      "wait": "Please wait"
+    },
+    "draw": {
+      "description": "Create important markers or mark areas",
+      "name": "Drawing / Writing"
+    },
+    "draw_old": {
+      "attributeSelect": {
+        "attributeDuplicatedKeyError": "Key already exists!",
+        "attributeKeyError": "Attribute key must be set!",
+        "input": {
+          "key": "New attribute key",
+          "value": "New attribute value"
+        },
+        "noFeatureSelected": "Please select a feature!",
+        "remove": "Delete",
+        "save": "Save"
+      },
+      "button": {
+        "delete": "Delete geometry / text",
+        "deleteAll": "Delete all",
+        "download": "Download",
+        "draw": "Draw geometry / text",
+        "edit": "Edit geometry",
+        "editAttributes": "Edit attributes",
+        "redo": "Redo",
+        "saveDrawing": "Save drawing",
+        "undo": "Undo"
+      },
+      "clickToPlaceText": "Click on the map to place the text",
+      "color": "Fill color",
+      "colorContour": "Outline color",
+      "colors": {
+        "black": "Black",
+        "blue": "Blue",
+        "green": "Green",
+        "grey": "Grey",
+        "orange": "Orange",
+        "red": "Red",
+        "white": "White",
+        "yellow": "Yellow"
+      },
+      "defined": "defined",
+      "description": "Create important markers or identify areas. Download them here to reload them later",
+      "doubleCirclePlaceholder": "Please enter a radius",
+      "download": {
+        "allGeometryTypesNotSupported": "One or more drawn geometries cannot be downloaded in the selected format because the format does not support the geometry type.",
+        "enterFilename": "Please enter filename",
+        "filename": "Filename",
+        "format": "Format",
+        "notSupportedGeometryType": "One or more drawn geometries cannot be downloaded in the selected format because the format does not support the geometry type.",
+        "pleaseChoose": "Please choose",
+        "unknownGeometry": "Unknown geometry: <strong>{{geometry}}</strong>"
+      },
+      "drawLayerVisible": "Show drawing",
+      "drawTypeOptions": {
+        "drawArea": "Area",
+        "drawCircle": "Circle",
+        "drawCurve": "Freehand",
+        "drawDoubleCircle": "Double circle",
+        "drawLine": "Line",
+        "drawSymbol": "Symbol",
+        "writeText": "Text"
+      },
+      "fontName": "Font",
+      "fontSize": "Font size",
+      "geometry": "Geometry",
+      "geometryDrawFailed": "The transferred geometry could not be displayed.",
+      "iconList": {
+        "gelber Pin": "yellow Pin",
+        "iconCloud": "Cloud",
+        "iconLeaf": "Leaf",
+        "iconMeadow": "Meadow",
+        "iconPoint": "Point"
+      },
+      "innerColorContour": "Inner outline color",
+      "innerRadius": "Inner radius",
+      "interactive": "interactive",
+      "limitReached_one": "You have already drawn {{count}} object, please delete it before continuing!",
+      "limitReached_other": "You have already drawn {{count}} objects, please delete one before proceeding!",
+      "lineWidth": "Line width",
+      "method": "Method",
+      "name": "Drawing / Writing",
+      "outerColorContour": "Outer outline color",
+      "outerRadius": "Outer radius",
+      "radius": "Radius",
+      "symbol": "Symbol",
+      "text": "Text",
+      "transparency": "Transparency",
+      "transparencyOutline": "Transparency Outline",
+      "undefinedInnerCircle": "Please also define the inner circle.",
+      "undefinedOuterCircle": "Please also define the outer circle.",
+      "undefinedRadius": "Please specify a radius.",
+      "undefinedTwoCircles": "Please define both circles.",
+      "unit": "Unit"
+    },
+    "featureLister": {
+      "chooseTheme": "Choose theme",
+      "details": "Details",
+      "detailsOfSelected": "Details of the selected feature",
+      "description": "List all entries for a topic",
+      "key": "{{shownFeatures}} of {{featureCount}} features listed",
+      "list": "List",
+      "more": "More...",
+      "name": "List",
+      "visibleVectorLayers": "Visible vector layers"
+    },
+    "fileImport": {
+      "alertingMessages": {
+        "featureError": "A feature in this file could not be read.",
+        "formatError": "File \"{{filename}}\" could not be read. Please check if actual filetype is matching your chosen filetype.",
+        "missingFileContent": "There was an error loading your file \"{{filename}}\". Please check its filetype and content. If still not working, please contact the support.",
+        "missingFormat": "The chosen filetype {{format}} is not supported. Please contact the support.",
+        "success": "The file \"{{filename}}\" has been successfully imported.",
+        "successPartly": "The file \"{{filename}}\" was partially imported."
+      },
+      "captions": {
+        "drawTool": "Open: $t(common:modules.draw.name)",
+        "introDrawTool": "Use the tool &quot;$t(common:modules.draw.name)&quot; to change imported geometries in color and style.",
+        "introFormats": "You can import KML files (*.kml), GPX files (*.gpx) or GeoJson files (*.geojson, *.json).",
+        "introInfo": "Import your file via drag and drop or alternatively use the browse dialogue.",
+        "supportedFiletypes": {
+          "auto": "Automatic filetype detection",
+          "geojson": "GeoJson-file (*.geojson, *.json)",
+          "gpx": "GPX-file (*.gpx)",
+          "kml": "KML-file (*.kml)"
+        }
+      },
+      "description": "Import geodata from different file formats",
+      "fileZoom": "Zoom to features of this file \"{{filename}}\"",
+      "importFiles": "Import chosen files",
+      "name": "Import file",
+      "removeAttachment": "Remove file",
+      "successfullyImportedLabel": "Successfully imported:",
+      "zoom": "Zoom",
+      "colorPerAttributes": "Color per attribute",
+      "stylingAttributeDescription": "Select an attribute to style the layer by.",
+      "stylingColorDescription": "When a color is selected, a color scale is automatically created. For numerical (quantitative) values, a color scale is created ranging from light to dark. The selected color is assigned to the highest value in the data. Different colors are created for qualitative data."
+    },
+    "filter": {
+      "alertingMessages": {
+        "noMatchingFilterId": "The configured filter id does not exist."
+      },
+      "ariaLabel": {
+        "checkbox": "Checkbox for {{param}}",
+        "date": "Date for {{param}}",
+        "dateRange": {
+          "from": "Start date from {{param}}",
+          "to": "End date from {{param}}"
+        },
+        "dropdown": "SelectBox for {{param}}",
+        "input": "Input for {{param}}",
+        "radio": "Radio for {{param}}",
+        "slider": "Slider range for {{param}}",
+        "sliderRange": {
+          "max": "Slider max for {{param}}",
+          "min": "Slider min for {{param}}"
+        },
+        "toolInfo": "Tool information (opens link in new tab)"
+      },
+      "button": {
+        "confirm": "Confirm",
+        "stop": "Stop"
+      },
+      "chart": {
+        "speciesCadastreAlternativeText": "Observation data including time of observation are not yet sufficiently available for this species."
+      },
+      "description": "Filter the objects shown on the map",
+      "download": {
+        "enterFilename": "Please enter filename",
+        "filename": "Filename",
+        "format": "Format",
+        "label": "Download filtered data",
+        "labelBtn": "Download",
+        "pleaseChoose": "Please choose"
+      },
+      "dropdown": {
+        "deselectAll": "Deselect all",
+        "emptyList": "List is empty",
+        "noElements": "No elements found",
+        "selectAll": "Select all"
+      },
+      "filterButton": "Filter",
+      "filterResult": {
+        "disabledInfo": "The filter is disabled in current zoom level",
+        "label": "All filtered Counts",
+        "unit": "{{amountOfFilteredItems}} Results"
+      },
+      "geometryFilter": {
+        "activate": "Set area for filtering",
+        "buffer": "Buffer [m]",
+        "geometries": {
+          "circle": "Circle",
+          "lineString": "Line + Buffer",
+          "polygon": "Polygon",
+          "rectangle": "Rectangle"
+        },
+        "help": "Select an area on the map to filter only within that area.",
+        "removeGeometry": "Remove that area",
+        "selectGeometry": "Choose an area."
+      },
+      "info": {
+        "infoIcon": "By clicking on the info icon more information can be retrieved",
+        "snippetCheckbox": "The checkbox can be enabled/disabled by a mouse click.",
+        "snippetDate": "To enter a date as a search criteria, click in the date input field and select a date from the opened calendar.",
+        "snippetDateRange": "To enter a date range as a search criteria, click in the input field for the start or end date and select a start or end date from the open calendar.",
+        "snippetDropdown": "You can select one or more values from the given list of values.",
+        "snippetInput": "You can enter the desired search criteria in the text field.",
+        "snippetSlider": "To enter a numerical value as a search criterion, you can move the slider to the right or left. In addition, you can enter the value directly in the input field.",
+        "snippetSliderRange": "For entering two numerical values as range for the search criteria, you can slide the two sliders to the right or left. Additionally, you can enter the values directly in the input fields."
+      },
+      "name": "Filtering",
+      "searchInMapExtent": "Search in current map extent",
+      "slider": {
+        "valueEmptyErrorMessage": "The input value must not be empty!",
+        "valueOutOfRangeErrorMessage": "The input {{inputValue}} value must be within the validity range {{minValueSlider}} and {{{maxValueSlider}}!"
+      },
+      "snippetTags": {
+        "resetAll": "Reset all",
+        "selectionText": "Your selection:"
+      },
+      "upload": {
+        "geometryParseError": "Could not parse given geometry"
+      },
+      "distributionMapLinkText": "Link to distribution map",
+      "distributionMapLinkTextTitle": "Copy the link to distribution map",
+      "universalSearchTitle": "Search for this animal on the internet",
+      "resetButton": "Reset to the original state"
+    },
+    "getFeatureInfo": {
+      "boolean": {
+        "0": "No",
+        "1": "Yes",
+        "false": "No",
+        "no": "No",
+        "true": "Yes",
+        "yes": "Yes"
+      },
+      "buttonBack": "Show previous information",
+      "buttonForward": "Show further information",
+      "errorMessage": "An error has occurred  during the information request (GetFeatureInfo).<br>Please try again later. If the problem persists, please contact the operator of the service.",
+      "favoriteIcons": {
+        "compareFeatureIcon": {
+            "toCompareList": "Add to compare list",
+            "fromCompareList": "Remove from compare list"
+        }
+      },
+      "name": "Retrieve information",
+      "themes": {
+        "default": {
+          "imgAlt": "No image could be loaded.",
+          "noAttributeAvailable": "No attribute available!"
+        },
+        "sensor": {
+          "chargingStations": {
+            "available": "Available",
+            "charging": "Charging",
+            "outoforder": "Out of order",
+            "faulted": "Faulted"
+          },
+          "sensor": {
+            "dataName": "Data",
+            "header": {
+              "description": "Description",
+              "name": "Name",
+              "ownerThing": "Owner"
+            }
+          },
+          "sensorBarChart": {
+            "chartTitleAverage": "Average off",
+            "clock": "{{value}} o'clock",
+            "month_one": "{{count}} month",
+            "month_other": "{{count}} months",
+            "nextWeekday": "Next weekday",
+            "noticeTextAvailable": "(Only data with the value available are considered)",
+            "noticeTextCharging": "(Only data with the value charging are considered).",
+            "noticeTextOutoforder": "(Only data with the value outoforder are considered).",
+            "noticeTextFaulted": "(Only data with the value faulted are considered).",
+            "previousWeekday": "Previous Weekday",
+            "year_one": "{{count}} year",
+            "year_other": "{{count}} years"
+          },
+          "sensorData": {
+            "firstColumnHeaderName": "Properties"
+          }
+        }
+      },
+      "title": "Object information"
+    },
+    "gfiThemes": {
+      "dataTable": {
+        "sort": "Sort values"
+      }
+    },
+    "info": {
+      "name": "Info",
+      "disclaimer": "Legal disclaimer",
+      "home": {
+        "name": "Hamburg Town"
+      }
+    },
+    "language": {
+      "de": "Deutsch",
+      "description": "Choose your language",
+      "en": "English",
+      "es": "Español",
+      "it": "Italiano",
+      "name": "Change language",
+      "platt": "Platt",
+      "pt": "Português",
+      "ru": "Русский",
+      "tr": "Türkçe",
+      "ua": "Українська",
+      "nl": "Nederlands"
+    },
+    "layerClusterToggler": {
+      "description": "Activate multiple themes with one button click",
+      "info": "Turn the visibility of the following layers on or off:",
+      "name": "Open Layer Cluster",
+      "toggle": "Toggle layer visibility"
+    },
+    "layerInformation": {
+      "additionalMetadata": "additional metadata",
+      "addressSuffix": "Address",
+      "addressSuffixes": "Layer adresses",
+      "attachFileMessage": "Attach file type during download if necessary",
+      "downloadDataset": "Download dataset",
+      "lastModified": "Last modified",
+      "legend": "Legend",
+      "name": "Information and legend",
+      "noMetadataLoaded": "No metadata could be loaded!",
+      "noMetadataLoadedConsole": "Metadata for this layer could not be loaded. There seems to be a problem with the provided services.json.",
+      "periodicityTitle": "Data update",
+      "publicationCreation": "Publication / Creation",
+      "pointOfContact": "Point of contact",
+      "contactInfoMessage": "Write to the point of contact of the topic ",
+      "mailSubject": "Request to dataset ",
+      "mailOriginHint": "This request was sent to you through the contact form on ",
+      "changeLayerInfo": "Choose layer infotext: "
+    },
+    "layerPills": {
+      "next": "Show next layers",
+      "previous": "Show previous layers",
+      "remove": "Remove layer"
+    },
+    "layerSelection": {
+      "addSubject": "Add subject",
+      "name": "Topic selection",
+      "baselayers": "Baselayers",
+      "datalayer": "Subject data",
+      "selectAll": "Add all",
+      "deselectAll": "Remove all",
+      "selectedSubjectsCount_other": "Please select a topic",
+      "addSelectedSubjectsToMap_one": "Add selected topic to the map",
+      "addSelectedSubjectsToMap_other": "Add {{count}} selected topics to the map"
+    },
+    "layerSlider": {
+      "description": "Start a slideshow",
+      "displayLayers": "Display of various layers.",
+      "name": "Layer series",
+      "serviceOne": "Service 1",
+      "serviceTwo": "Service 2",
+      "serviceThree": "Service 3",
+      "serviceFour": "Service 4",
+      "sliderTypeHandle": "Slidermode",
+      "sliderTypePlayer": "Playermode",
+      "title": "Simulation of example services",
+      "titleNotConfigured": "Title not configured"
+    },
+    "layerTree": {
+      "addLayer": "Add layer",
+      "categories": "Categories",
+      "categoryInspire": "Inspire",
+      "categoryOpendata": "Opendata",
+      "categoryOrganisation": "Government agencies",
+      "categoriesListHead": "Organize topics by the following category:",
+      "subjectData3D": "3D data",
+      "iconRemoveLayer": "Remove topic from Map",
+      "iconSubMenu": "Show more functions",
+      "iconTransparency": "Transparency",
+      "infosAndLegend": "Show information about the data set",
+      "invisibleLayer": "This topic can only be displayed at {{minScale}} - {{maxScale}}",
+      "invisibleLayerNoScale": "This topic cannot be displayed at this scale"
+    },
+    "legend": {
+      "description": "Get information about the objects in the map",
+      "linkToPdf": "Link to extern legend (PDF)",
+      "name": "Legend",
+      "noLegendForLayerInfo": "No legend available"
+    },
+    "login": {
+      "description": "Log in with your user name and password",
+      "descriptionLoggedIn": "You are logged in",
+      "login": "Login",
+      "logout": "Logout",
+      "progress": "Please login in the opened popup.",
+      "name": "Name",
+      "email": "Email",
+      "profile": "Profile"
+    },
+    "measure": {
+      "area": "Area",
+      "deleteMeasurements": "Delete measurements",
+      "description": "Measure a distance or area",
+      "finishWithDoubleClick": "Double click to complete",
+      "geometry": "Geometry",
+      "influenceFactors": "The displayed values are subject to inaccuracies that are influenced by the following factors, among others, e.g. scale, resolution of the map and the screen.",
+      "inputAccuracy": "Input accuracy and number of digitized points",
+      "measure": "Measure",
+      "measureDistance": "Distance of the measuring line or size of the measuring surface",
+      "name": "Measure distance / area",
+      "resolution": "Resolution of the map",
+      "scale": "Scale",
+      "screenResolution": "Screen resolution",
+      "stretch": "Distance"
+    },
+    "menu": {
+      "ariaLabelClose": "Close $t(menu.name)",
+      "ariaLabelOpen": "Open $t(menu.name)",
+      "name": "Menu",
+      "widthUrlParamError": "The Url-Parameter to control the width of the menu has a wrong value. Please choose a value between 5 and 90."
+    },
+    "modalItem": {
+      "close": "Close window"
+    },
+    "modeler3D": {
+      "entity": {
+        "captions": {
+          "backToList": "Back to Overview",
+          "copyTitle": "Copy 3D Model \"{{name}}\"",
+          "delete": "Delete Model",
+          "deletionTitle": "Delete 3D Model \"{{name}}\"",
+          "dimensionsModel": "Show dimensions of 3D Model \"{{name}}\"",
+          "editModel": "Edit 3D Model \"{{name}}\"",
+          "incrementTooltip": "Hold Shift to increase the value coarser.",
+          "modelName": "Model Name",
+          "projectionInfo": "Attention! When using the WGS84 coordinate system, there may be inaccuracies. We recommend using decimal notation.",
+          "rotationPlaceholder": "Increment/Decrement steps",
+          "rotation": "Rotation",
+          "rotationSwitch": "Rotation Steps",
+          "scale": "Scale",
+          "steps": "Steps",
+          "visibilityTitle": "Show/Hide 3D Model \"{{name}}\"",
+          "zoomTo": "Zoom to 3D Model \"{{name}}\""
+        },
+        "deleteInteraction": {
+          "confirm": "Delete",
+          "headline": "Attention",
+          "text": "Are you sure you want to delete the model \"{{name}}\"?"
+        },
+        "projections": {
+          "adaptToHeight": "Adapt to Terrain",
+          "area": "Area",
+          "cartesian": {
+            "eastingLabel": "Easting",
+            "northingLabel": "Northing"
+          },
+          "depth": "Depth",
+          "hdms": {
+            "eastingLabel": "Longitude",
+            "northingLabel": "Latitude"
+          },
+          "height": "Height",
+          "projection": "Coordinate System",
+          "width": "Width"
+        }
+      },
+      "import": {
+        "alertingMessages": {
+          "featureError": "A feature in this file could not be read.",
+          "fileSizeError": "The file size exceeds the limit of 100 MB.",
+          "formatError": "The file \"{{filename}}\" could not be read. Please check if the file has the format *.gltf, *.obj *.dae or *.geojson.",
+          "missingFileContent": "Error reading the file \"{{filename}}\". Please check the file type and content. If the file is error-free, please contact support.",
+          "missingFormat": "The file format \"{{format}}\" is not supported. Please contact support.",
+          "success": "The file \"{{filename}}\" was successfully imported.",
+          "successPartly": "The file \"{{filename}}\" was partially imported."
+        },
+        "captions": {
+          "introInfo": "With the importer, you can load, visualize, and analyze digital urban designs into the existing 3D model of the city.",
+          "introInfo2": "Simply import your desired file by dragging and dropping or alternatively using the browser's open dialog.",
+          "introFormats": "You can import glTF- (*.gltf), OBJ- (*.obj), Collada- (*.dae), or GeoJSON-files.",
+          "info": "Information",
+          "successfullyImportedLabel": "Imported 3D Models:",
+          "newImport": "New Import"
+        }
+      },
+      "draw": {
+        "captions": {
+          "beginModelling": "Model 3D Object",
+          "clampToGround": "Align to Terrain Model",
+          "color": "Color",
+          "coordinates": "Coordinates",
+          "design": "Design",
+          "dimensions": "Dimensions",
+          "drawing": "Drawing",
+          "drawName": "Name",
+          "drawnModels": "Drawn Models:",
+          "export": "Export",
+          "exportTitle": "Export all drawn models in GeoJSON format.",
+          "extrudedHeight": "Extruded Height",
+          "fillColor": "Fill Color",
+          "fillTransparency": "Transparency",
+          "geometries": "Geometries",
+          "introInfo": "With this function, you can draw 3D objects on the map and edit and design them individually. You can sketch buildings and then, for example, perform shadow simulations.\n\nThe tool also allows drawing on existing buildings and imported objects. A prerequisite is that you have activated the terrain height.\n\nUsing the export function, you can export your designs and load them back into the application later using the importer.",
+          "info": "Information",
+          "newModel": "New Model",
+          "options": "Options",
+          "readyGeometries": "Ready Geometries",
+          "showDimensions": "Show dimensions while drawing",
+          "strokeColor": "Outline Color",
+          "strokeWidth": "Line Width",
+          "transformation": "Transformation"
+        },
+        "geometries": {
+          "line": "Line",
+          "polygon": "Polygon",
+          "rectangle": "Rectangle"
+        }
+      },
+      "filter": {
+        "captions": {
+            "abortStyle": "Cancel",
+            "addFilter": "Add Filter",
+            "applyStyle": "Apply",
+            "editFilter": "Edit Filter",
+            "fillColor": "Fill Color",
+            "filterList": "Filter List",
+            "filterName": "Filter Name",
+            "info": "Information",
+            "introInfo": "You can color buildings by attributes to visualize their usage with the Filter & Style function.",
+            "introInfo2": "To do this, select the desired layer and the attribute you want to visualize. Then you can adjust the color of the buildings.",
+            "noFilter": "No filters available.",
+            "optionsTitle": "Filter Options",
+            "pvoCheck": "Color all values according to the PlanzeichenVO",
+            "resetStyle": "Reset",
+            "selectLayer": "Select Layer",
+            "selectAttribute": "Select Attribute",
+            "title": "Filter & Style Function",
+            "styleSettingsTitle": "Color Settings",
+            "value": "Value"
+        },
+        "errorLoadingData": "Error loading the values for the attribute 'BuildingFunctionType'"
+    },
+      "options": {
+        "captions": {
+          "enableFunction": "Enable/Disable Function",
+          "hideObjectInfo": "Existing buildings can be deactivated in their representation, allowing you to place imported elements on the corresponding property.\n\nTo activate this function, click Enable and click on the desired objects to deactivate them in the view.\n\nAll hidden objects appear in a list and can be reactivated there.",
+          "hideSwitchLabel": "Hide Buildings with Mouse Click",
+          "pov": "Jump to Pedestrian View",
+          "povInfo": "Here you have the option to take the perspective of pedestrians and look around the city.\n\nNavigate to the desired position. Once you set the cylinder on the map with a mouse click, you will enter the pedestrian view at that location.\n\nYou can change your field of view with mouse movements. To return to the starting position, press the Escape key (ESC).",
+          "povTitle": "Pedestrian Perspective",
+          "visibilityTitle": "Visibility Options"
+        }
+      },
+      "nav": {
+        "drawTitle": "Draw",
+        "filterTitle": "Filter & Style",
+        "importTitle": "Import",
+        "options": "Options"
+      },
+      "description": "Import, draw and edit 3D models and buildings in the city model",
+      "hiddenObjectsLabel": "Hidden Buildings:",
+      "title": "3D Modeler"
+    },
+    "mouseHover": {
+      "infoText": "(more objects. Please zoom.)"
+    },
+    "news": {
+      "description": "Find out what's new",
+      "headline": "News",
+      "name": "News"
+    },
+    "openConfig": {
+      "explanation": "Open a map that you have saved as a local configuration file.",
+      "loadFileFailed": "The <b>{{targetFileName}}</b> configuration file was not loaded. The file format <b>{{targetFileFormat}}</b> is not supported. Please load a file in the <b>json</b> file format.",
+      "loadFileSuccess": "The <b>{{targetFileName}}</b> configuration file was loaded successfully",
+      "name": "Load map",
+      "openFile": "Open configuration file"
+    },
+    "portalFooter": {
+      "designation": "Cartography and design:",
+      "mapDiscrepancy": "Report map discrepancy",
+      "scale": "scale of map"
+    },
+    "print": {
+      "alertMessage": "The maximum number of parallel printouts has been exceeded.<br>Please try again once the creation of other printouts is complete.",
+      "authorLabel": "Author",
+      "autoAdjustScale": "Adjust printing scale automatically",
+      "createDownloadFile": "Will be created...",
+      "description": "Download a map section in a selected format",
+      "downloadFile": "Download file",
+      "dpiLabel": "DPI",
+      "errorMessage": "The query of the metadata failed. If the problem persists, please contact the owner of the service: <b>{{cswObjCswUrl}}</b>",
+      "formatLabel": "Format",
+      "hintInfoScale": "If the selected print scale differs from the scale in the map window, can this lead to a different map layout in print.",
+      "invisibleLayer": "The following topics cannot be printed in the selected print scale {{scale}}:",
+      "improveResolution": "Improve scaling resolution",
+      "layoutLabel": "Layout",
+      "name": "Print map",
+      "outputfileTitleLabel": "Filename",
+      "printLabel": "Create file",
+      "scaleLabel": "Printing scale",
+      "titleLabel": "Title",
+      "subtitleLabel": "Subtitle",
+      "textFieldLabel": "Free text box",
+      "validationWarning": "The file name may only contain letters and the special characters '-' and '_'.",
+      "vtlWarning": "Since MapFish 3 does not support Vector Tile Layers, the following active layers will not appear in the print view:",
+      "waitForPrintErrorMessage": "Printout creation has failed.<br>Please try again at a later time or contact the portal operator.",
+      "withInfoLabel": "With information",
+      "withLegendLabel": "With legend"
+    },
+    "routing": {
+      "addWaypoint": "Add Waypoint",
+      "avoidOptions": {
+        "FERRIES": "Ferries",
+        "header": "Avoid traffic routes",
+        "HIGHWAYS": "Highways",
+        "STEPS": "Steps",
+        "TOLLWAYS": "Tollways",
+        "UNPAVEDROADS": "Unpaved roads",
+        "MIXEDTRAFFIC": "Mixed traffic Speed 50",
+        "COBBLESTONE": "Cobblestone",
+        "NARROWWAYS": "Narrow ways",
+        "BORDERS": "Borders"
+      },
+      "batchProcessing": {
+        "cancel": "Cancel batch processing",
+        "example": "Example",
+        "header": "Batch Processing",
+        "isProcessing": "Batch processing is running",
+        "placeFile": "Place file here",
+        "structure": "Structure",
+        "uploadFile": "Upload File"
+      },
+      "coordinateInputHelp": "Find a place or add a point by clicking on the map",
+      "deleteWaypoint": "Delete Waypoint",
+      "description": "Find out the fastest way to get to your destination or set a search radius",
+      "directions": {
+        "batchProcessing": {
+          "downloadHeader": {
+            "distance": "Distance(m)",
+            "profile": "Profile",
+            "time": "Duration(min)",
+            "xEnd": "X-Value_End",
+            "xStart": "X-Value_Start",
+            "yEnd": "Y-Value_End",
+            "yStart": "Y-Value_Start"
+          },
+          "errorNoEntries": "No entries in the CSV-File",
+          "errorAllFailed": "All requests have failed. The request may be blocked by the service. The file does not contain any results.",
+          "errorRowContainsEntriesNoNumber": "Coordinates in line {{row}} do not contain numbers",
+          "errorSomeFailed": "{{countFailed}} Results could not be calculated correctly. The result file contains empty cells at these positions.",
+          "errorToManyEntriesInFile": "Maximum number of lines exceeded ({{limit}})",
+          "errorToManyEntriesInRow": "Line {{row}} contains more than 5 entries, please note the File-Structure (ID;lon(Startpoint);lat(Startpoint);lon(Endpoint);lat(Endpoint))",
+          "structure": "ID;lon(Startpoint);lat(Startpoint);lon(Endpoint);lat(Endpoint)"
+        },
+        "deleteRestrictedAreas": "Delete Barrier areas",
+        "editRestrictedAreas": "Draw/edit Barrier areas",
+        "keepRoutesAfterClose": "Keep the route after closing the tool",
+        "preference": {
+          "RECOMMENDED": "Recommended",
+          "SHORTEST": "Shortest"
+        },
+        "preferenceLabel": "Preference",
+        "restrictedAreas": "Barrier areas",
+        "GREEN": "Green"
+      },
+      "download": {
+        "filename": "Filenname",
+        "filenamePlaceholder": "Please enter file name",
+        "format": "Format",
+        "header": "Download",
+        "saveResult": "Save Result",
+        "error": {
+          "header": "Invalid filename",
+          "fileNameTooLong": "Filename is too long. No more than 40 characters are allowed",
+          "fileNameContainsWhiteSpace": "Filename contains white space",
+          "fileNameContainsInvalidChars": "Filename contains invalid characters"
+        }
+      },
+      "endpoint": "Endpoint",
+      "elevationProfile": {
+        "titleCollapse": "Elevation Profile",
+        "titleChart": "Elevation Profile along the route",
+        "yAxis": "Height in m",
+        "xAxis": "Distance in km",
+        "titleTooltipMeters": "Height after {{distance}} meters",
+        "titleTooltipKilometers": "Height after {{distance}} kilometers"
+      },
+      "errors": {
+        "titleErrorRouteFetch": "Failed to calculate route",
+        "avoidAreaBig": "The barrier areas specified are too large. Please correct your input.",
+        "errorIsochronesFetch": "Error while calculating reachability",
+        "errorRouteFetch": "Error while calculating route",
+        "fetchingCoordinates": "Error when querying the coordinates",
+        "noRouteFound": "No Route found"
+      },
+      "isochrones": {
+        "batchProcessing": {
+          "errorNoEntries": "No entries in the CSV-File",
+          "errorAllFailed": "All requests have failed. The request may be blocked by the service. The file does not contain any results.",
+          "errorRowContainsEntriesNoNumber": "Coordinates in line {{row}} do not contain numbers",
+          "errorSomeFailed": "{{countFailed}} Results could not be calculated correctly. The result file contains empty cells at these positions.",
+          "errorToManyEntriesInFile": "Maximum number of lines exceeded ({{limit}})",
+          "errorToManyEntriesInRow": "Line {{row}} contains more than 3 entries, please note the File-Structure (ID;lon(Startpoint);lat(Startpoint))",
+          "structure": "ID;lon(Startpoint);lat(Startpoint)"
+        },
+        "calculate": "Calculate",
+        "interval": "Interval",
+        "legend": "Legend",
+        "maxDistance": "Maximum distance",
+        "maxTraveltime": "Maximum travel time",
+        "optimization": {
+          "DISTANCE": "Reachability by distance",
+          "TIME": "Reachability by time"
+        },
+        "optimizeHeader": "Optimization",
+        "startpoint": "Startpoint"
+      },
+      "moveWaypointDown": "Move waypoint down",
+      "moveWaypointUp": "Move waypoint up",
+      "startIndex": "S",
+      "endIndex": "Z",
+      "name": "Route planner",
+      "resetSettings": "Reset settings",
+      "restrictions": {
+        "header": "HGV Parameter",
+        "length": "Length",
+        "lengthTooltip": "Truck length. Accepted values: 0 to 30 meters",
+        "width": "Width",
+        "widthTooltip": "Truck width. Accepted values: 0 to 3.5 meters",
+        "height": "Height",
+        "heightTooltip": "Truck height. Accepted values: 0 to 5 meters",
+        "weight": "Weight",
+        "weightTooltip": "Truck weight. Accepted values: 0 to 65 tons",
+        "axleload": "Axleload",
+        "axleloadTooltip": "Truck axle load. Accepted values: 0 to 19 tons",
+        "hazmat": "Hazardous materials"
+      },
+      "speedprofiles": {
+        "CAR": "Car",
+        "CYCLING": "Bike",
+        "FOOT": "Foot walking",
+        "HGV": "Heavy vehicle",
+        "WHEELCHAIR": "Wheelchair"
+      },
+      "startpoint": "Startpoint",
+      "tabs": {
+        "DIRECTIONS": "Route Planning",
+        "ISOCHRONES": "Reachability",
+        "TSR": "Travelling Salesman"
+      },
+      "tsr": {
+        "header": "Change route options",
+        "calculate": "Calculate TSR Route",
+        "upload": {
+          "header": "Upload waypoints",
+          "description": "Choose a csv file that contains your own TSR waypoints. The required coordinate system is WGS84 (EPSG:4326). Please use the following format:",
+          "csvHeaders": "File contains header",
+          "help": "Help",
+          "divider": "or",
+          "failTitle": "File upload failed",
+          "successTitle": "File upload successful",
+          "successInfo": "The uploaded waypoints are now available in the list."
+        },
+        "backToTSR": "Routing",
+        "modifyWaypointsTSR": "Modify waypoints",
+        "outputHeaderTSR": "Fastest route",
+        "downloadOutputTSR": "Download TSR route",
+        "downloadCsv": {
+          "header": "*** Travelling Salesman Routing ***",
+          "descriptionRoundTrip": "startpoint: {{start}} to: round trip",
+          "descriptionNoRoundTrip": "startpoint: {{start}} to: {{end}}",
+          "optimalOrder": "optimal {{profile}} order:",
+          "waypoint" : "{{pos}}) {{displayName}};{{lon}};{{lat}}"
+        },
+        "selectedPoints": "Selected waypoint",
+        "structure":"ID;lon;lat",
+        "tsrEndpoint": "If not specified: round trip",
+        "tsrDuration": "Duration: ",
+        "tsrDistance": "Distance: ",
+        "errors": {
+          "wrongFileType": "Wrong file format. Please upload a CSV-File.",
+          "errorNoEntries": "No entries in the CSV-File",
+          "errorToManyEntriesInFile": "Exceeded maximum number of TSR waypoints ({{limit}}).",
+          "wrongNEntriesInRow": "Wrong number of attributes in row {{row}}. Please check the format(ID;lon;lat) and the separator (Semicolon).",
+          "rowContainsEntriesNoNumber": "Coordinates in row {{row}} do not contain numbers.",
+          "emptyRow": "File contains at least one empty row.",
+          "emptyEntriesInRow": "Missing data in row {{row}}. Please check the data and the separator (Semicolon).",
+          "invalidCoordinateRange": "Coordinates have invalid values in row {{row}}. Valid values are -180 - 180 (Longitude) and -90 - 90 (Latitude).",
+          "attributeTooLong": "Attributes in row {{row}} contain more than 25 characters.",
+          "errorCalculation": "The calculation could not be started.",
+          "notEnoughPoints": "Please add a start point and at least two waypoints.",
+          "emptyPoint": "At least one point is empty. Please check the points in the list.",
+          "duplicatePoints": "The uploaded waypoints are now available in the list. Duplicates were ignored.",
+          "unreachablePoint": "Unfortunately, no route could be calculated for at least one of the selected points."
+        }
+      },
+      "waypoint": "Waypoint"
+    },
+    "scaleSwitcher": {
+      "description": "Change the scale without scrolling",
+      "label": "Scale",
+      "name": "Scale switcher"
+    },
+    "searchBar": {
+      "locationFinder": {
+        "errorMsg": "Searching with LocationFinder failed",
+        "serverError": "Server error",
+        "unknownProjection": "Result provided within a unknown coordinate system"
+      },
+      "placeholder": {
+        "searchFor": "Search for",
+        "address": "Search for Address",
+        "addressDistrict": "Search address, district",
+        "addressHospitalBplan": "Search for Address/Hospital/B-Plan",
+        "addressTopic": "Search address, district, topics",
+        "addressTopicParcel": "Search address, district, topics, parcel",
+        "startWithAddress": "Start here with address!"
+      },
+      "actions": {
+        "activateLayerInTopicTree": "Show layer in topic tree",
+        "addLayerToTopicTree": "Add layer to topic tree",
+        "highlightFeature": "Highlight feature",
+        "openGetFeatureInfo": "Show information",
+        "setMarker": "Set marker",
+        "zoomToResult": "Zoom to result",
+        "startRouting": "Start route",
+        "showInTree": "Show topic in folder",
+        "showLayerInfo": "Information and legend"
+      },
+      "showAllResults": "Show all results",
+      "searchResults": "search results",
+      "search": "search",
+      "searchResultList": "search overview",
+      "searchResultsFrom": "search results from: ",
+      "mark": "Select the topic",
+      "add": "Add Topic",
+      "type": {
+        "address": "address",
+        "county": "county",
+        "district": "district",
+        "folder": "folder (topics)",
+        "general": "topics",
+        "location": "location",
+        "parcel": "parcel",
+        "street": "street",
+        "subject": "subject (external topics)",
+        "topic": "issues & topics",
+        "topicBaselayer": "Theme (baselayer)"
+      },
+      "specialWFS": {
+        "ongoing": "in process",
+        "terminated": "terminated",
+        "hazardous": "event of malfunction",
+        "childcare": "childcare",
+        "bplan": "b-plan"
+      },
+      "noInitialResults": "Initial search found no hits.",
+      "showAll": "Show all",
+      "layerResultNotShown": "The found layer cannot be displayed.",
+      "layerInfoNotShown": "The layer information cannot be displayed."
+    },
+    "selectFeatures": {
+      "description": "Get information about objects you select on the map",
+      "name": "Select features",
+      "noFeatureChosen": "No features selected. Select features by holding the Ctrl key and dragging a box around the desired features, or add individual features by holding the Ctrl key and clicking with the left mouse button.",
+      "propertylessFeature": "Element without attributes",
+      "clearSelection": "Clear selection",
+      "deselectFeature": "Deselect feature",
+      "zoomToFeature": "Zoom to this feature"
+    },
+    "statisticDashboard": {
+      "name": "Statistic dashboard",
+      "description": "Filter statistics by topic and display associated tables and diagrams.",
+      "headings": {
+        "mrhstatistics": "MRH Statistics",
+        "mrhstatisticsTooltip": "Link to the metadata",
+        "addFilter": "Add Filter"
+      },
+      "infoText": "Note: For many areas, only a part is initially shown in the diagram (based on the table sorting). Additional areas can be added using the field at the bottom.",
+      "button": {
+        "difference": "Difference",
+        "table": "Table",
+        "chart": "Chart",
+        "add": "Add",
+        "reset": "Delete All",
+        "filter": "Filter",
+        "showMore": "show more...",
+        "showLess": "show less...",
+        "done": "Done",
+        "all": "All"
+      },
+      "label": {
+        "category": "Category",
+        "area": "Region",
+        "year": "Year",
+        "statistics": "Statistics",
+        "communities": "Communities",
+        "districts": "Districts",
+        "more": "more",
+        "time": "Timebased filter",
+        "geographical": "Geographical filter"
+      },
+      "filterInputs": {
+        "additional": "Additional"
+      },
+      "reference": {
+        "title": "Reference type",
+        "description": "Differential values, related to a reference year or area.",
+        "placeholder": "Please choose at least one option!",
+        "tagLabel": "Reference"
+      },
+      "legend": {
+        "under": "under",
+        "between": "between {{minimum}} and {{maximum}}",
+        "from": "From",
+        "nodata": "Visualization of data from multiple statistics on the map is not available.",
+        "legend": "Map legend",
+        "edit": "Edit",
+        "editClassification": "Edit classification",
+        "classification": "Classification",
+        "numberOfClasses": "Number of classes",
+        "colorPalette": "Color Palette",
+        "betweenValues": "between",
+        "opacity": "Opacity",
+        "reset": "Reset",
+        "range": "Range",
+        "color": "Color",
+        "equalIntervals": "Equal intervals",
+        "quantile": "Equal class sizes (quantiles)",
+        "customized": "Customized",
+        "andAbove": "and above",
+        "invalidCustomStepsAlert": "Warning: Threshold values for classification must be ascending numbers!"
+      },
+      "totalHint": "Attention: The sum function does not distinguish between absolute numbers, percentages, mean values or relative values (e.g. inhabitants per square meter). The totals are therefore not always interpretable. Please note in the context of the selected statistics.",
+      "backToOverview": "Overview of Diagrams"
+    },
+    "shadow": {
+      "name": "Shadows",
+      "description": "Show the shadow cast at different times on the map",
+      "pickDate": "Select a date:",
+      "shadowDisplayOff": "Hide shadow on the map",
+      "shadowDisplayOn": "Show shadow on the map",
+      "slideHour": "Select time:",
+      "withInfoLabel": "With information"
+    },
+    "shareView": {
+      "copyErrorAlert": "The <b><a href=\"{{url}}\" target=\"_blank\">current view URL</a></b> could not be copied to the clipboard. This function is only available on secure websites accessible via the HTTPS protocol (https://).<br><br>Please contact the portal operator and request the establishment of a secure connection.",
+      "description": "Share a link to the map",
+      "downloadQR": "Download QRCode",
+      "myMap": "This is my map: ",
+      "name": "Share selection",
+      "share": "Share",
+      "shareFacebook": "Share current view on Facebook",
+      "shareHeadline": "How would you like to share the link?",
+      "shareLink": "Copy current view as link",
+      "shareQR": "Generate current view as QRCode",
+      "shareTwitter": "Twitter",
+      "linkCopied": "Link was copied to clipboard.",
+      "qrError": "An error occurred while generating the QR code.",
+      "qrErrorDataTooLarge": "The data you want to share is too large. Please reduce the number of options on the map to decrease the data size."
+    },
+    "styleVT": {
+      "chooseTheme": "Please choose active theme",
+      "description": "Change the appearance of a layer of type VectorTile",
+      "introText": "Various predefined styles can be applied to VectorTile layers to optimize the view to match your requirements.",
+      "name": "Style Vector Tile Layers",
+      "noStyleableLayers": "There are currently no topics to which this tool could be applied.",
+      "style": "Style",
+      "theme": "Theme"
+    },
+    "wfsSearch": {
+      "district": "District",
+      "description": "search for objects in a topic",
+      "description_parcel": "Search for a parcel",
+      "fieldSelectionLabel": "Field Selection",
+      "instancesSelectLabel": "Instance selection",
+      "name": "WFS search",
+      "noResults": "No results were found for your search criteria. Please try again.",
+      "optionsPlaceholder": "Please choose an option!",
+      "parcelNumber": "Parcel number",
+      "parcelSearch": "Parcel search",
+      "resetButton": "Reset",
+      "searchButton": "Search",
+      "searchError": "Error while searching for the features: {{error}}.",
+      "showResultHeading": "Searchresults:",
+      "userHelp": {
+        "and": "and",
+        "label": "Information regarding the results of the search",
+        "or": "or",
+        "text": "The results of the search will fulfill the conditions / clauses {{userHelp}}. <br /> *Mandatory field"
+      },
+      "wrongConfig": "The layer with the id \"{{id}}\" for the search instance \"{{title}}\" is not defined."
+    },
+    "wfst": {
+      "deleteInteraction": {
+        "headline": "Caution",
+        "text": "Are you sure about deleting the selected feature?"
+      },
+      "description": "Create, update and delete objects",
+      "error": {
+        "allLayersNotSelected": "Activate a WFS-T layer in the layer tree",
+        "geometryOutOfRange": "The drawn geometry is out of range of the allowed region of the layer.",
+        "layerNotConfiguredCorrectly": "The selected layer has not been configured correctly to be used with this tool; it might be missing the parameter 'featurePrefix'.",
+        "layerNotSelected": "The selected layer has not been set to visible in the layer tree.",
+        "noFeature": "Please draw a geometry for your added properties.",
+        "onlyNumbersAllowed": "The input only allows numbers.",
+        "requiredPropertiesNotSet": "Please enter a valid value for the required properties {{properties}}."
+      },
+      "mandatoryInputError": {
+                    "text": "Regular text characters and special characters like , . / \\ [ ] space and German characters ö ä ü Ö Ä Ü ß and not only numbers are required",
+                    "number": "Number, partial number or negative number is required",
+                    "date": "Full date is required",
+                    "datetime-local": "Full date and hour is required"
+                },
+      "form": {
+        "discard": "Discard",
+        "save": "Save"
+      },
+      "interactionSelect": {
+        "delete": "Delete geometry",
+        "line": "Add line",
+        "point": "Add point",
+        "polygon": "Add area",
+        "update": "Edit geometry"
+      },
+      "layerSelectLabel": "Current layer:",
+      "name": "WFS-T Tool",
+      "polygonHint": "To move a polygon, hold down the Ctrl key and move your mouse while holding the mouse button down.",
+      "fieldRequired": "Field required",
+      "transaction": {
+        "error": {
+          "axios": "$t(common:modules.wfst.transaction.error.genericFailedTransaction)",
+          "InvalidParameterValue": "$t(common:modules.wfst.transaction.error.InvalidValue)",
+          "MissingParameterValue": "$t(common:modules.wfst.transaction.error.baseError) One or more parameter didn't receive an input and the service does not provide default values.",
+          "OperationNotSupported": "$t(common:modules.wfst.transaction.error.baseError) The requested operation is not supported by the service.",
+          "OperationParsingFailed": "$t(common:modules.wfst.transaction.error.baseError) The service could not process the transaction. Please contact the administrator.",
+          "OperationProcessingFailed": "$t(common:modules.wfst.transaction.error.baseError) An error occurred during the transaction."
+        },
+        "success": {
+          "baseSuccess": "{{transaction}} the geometry and its parameters was successful.",
+          "delete": "$t(common:modules.wfst.transaction.success.baseSuccess, {\"transaction\": 'Deletion of'})",
+          "insert": "$t(common:modules.wfst.transaction.success.baseSuccess, {\"transaction\": 'Insertion of'})",
+          "selectedUpdate": "$t(common:modules.wfst.transaction.success.baseSuccess, {\"transaction\": 'Updating'})"
+        }
+      }
+    },
+    "wmsTime": {
+      "layerSwiper": {
+        "description": "To move the swiper one can use the mouse or the arrow keys. When using the left and right arrow keys the layer is moved {{amount}}px to the respective side.",
+        "title": "Compare layers"
+      },
+      "timeSlider": {
+        "buttons": {
+          "backward": "Move one step back",
+          "deactivateLayerSwiper": "Remove layer",
+          "forward": "Move one step forward",
+          "layerSwiper": "Compare two points in time",
+          "play": "Playback of all points in time of the layer, starting from the currently selected point in time."
+        },
+        "inputRangeLabel": "Choose a point in time"
+      }
+    }
+  },
+  "shared": {
+    "js": {
+      "api": {
+        "cswParser": {
+          "annually": "annually",
+          "asNeeded": "as needed",
+          "biannually": "biannually",
+          "continual": "continual",
+          "daily": "daily",
+          "fortnightly": "fortnightly",
+          "irregular": "irregular intervals",
+          "monthly": "monthly",
+          "notPlanned": "not planned",
+          "quarterly": "quarterly",
+          "unknown": "unknown",
+          "weekly": "weekly"
+        }
+      },
+      "utils": {
+        "buildings": "Buildings",
+        "selectedFeatures": "Selection:"
+      }
+    },
+    "modules": {
+      "buttons": {
+        "download": "Download",
+        "error": {
+          "download": "An error occured on trying to download the data."
+        }
+      },
+      "draw": {
+        "drawEdit": {
+          "delete": "Delete geometry / text",
+          "deleteAll": "Delete all",
+          "modify": "Edit geometry",
+          "redo": "Redo",
+          "undo": "Undo"
+        },
+        "drawLayout": {
+          "fillColor": "Fill color",
+          "fillTransparency": "Transparency",
+          "innerCircle": "Inner circle:",
+          "outerCircle": "Outer circle:",
+          "strokeColor": "Outline color",
+          "strokeWidth": "Stroke width",
+          "extrudedHeight": "Extruded Height"
+        },
+        "drawSettingsCircle": {
+          "interactive": "Interactive",
+          "radii": {
+            "innerRadius": "Inner radius",
+            "outerRadius": "Outer radius",
+            "radius": "Radius"
+          },
+          "settings": {
+            "circle": "Settings Circle:",
+            "doubleCircle": "Settings double circle:"
+          },
+          "unit": "Unit"
+        },
+        "drawTypes": {
+          "box": "Box",
+          "circle": "Circle",
+          "doubleCircle": "Double circle",
+          "geometries": "Geometrien",
+          "line": "Line",
+          "pen": "Stift",
+          "point": "Point",
+          "polygon": "Area",
+          "rectangle": "Rectangle",
+          "symbols": "Symbol"
+        }
+      },
+      "graphicalSelect": {
+        "alert": {
+          "notSupportedElement": "Template element of the graphical selection is not supported! Available elements:",
+          "notSupportedOption": "Graphical selection contains not supported elements! Available elements:",
+          "notSupportedSelection": "SelectedOption of the graphical selection is not supported! Available elements:"
+        },
+        "displayName": "Select geometry",
+        "selectByCircle": "Draw circle",
+        "selectByPolygon": "Draw surface",
+        "selectBySquare": "Draw up rectangle",
+        "tooltipMessage": "Click to start and exit",
+        "tooltipMessagePolygon": "Click to add a point"
+      },
+      "inputs": {
+        "fileUpload": {
+          "dropzone": "Drop file here",
+          "browse": "browse files",
+          "or": "or "
+        }
+      },
+      "list": {
+        "pagination": "Pagination",
+        "replace": {
+          "no": "no",
+          "true": "yes"
+        },
+        "selection": "Row selection",
+        "zoomToResult": "Zoom to result",
+        "zoomToResults": "Zoom to selection"
+      },
+      "table": {
+        "fixColumnAriaLabel": "Click here to pin this column",
+        "download": "Download",
+        "reset": "Reset",
+        "settings": "Settings",
+        "total": "Total",
+        "totalTitle": "Calculate the total count of each list."
+      }
+    }
+  },
+  "aria": {
+    "sliderAria": "Slider for "
+  },
+  "libraries": {
+    "vue-datepicker-next": {
+      "lang": {
+        "formatLocale": {
+          "months": [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December"
+          ],
+          "monthsShort": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec"
+          ],
+          "weekdays": [
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday"
+          ],
+          "weekdaysShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+          "weekdaysMin": ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+          "firstDayOfWeek": 0,
+          "firstWeekContainsDate": 1
+        }
+      }
+    }
+  }
+}
