@@ -2,7 +2,7 @@
 
 A collection of MCP (Model Context Protocol) servers and tools for working with Berlin's open data ecosystem.
 
-**Live Demo**: https://interface-prototype.up.railway.app/
+**Live Demo**: TBD
 
 ## Structure
 
