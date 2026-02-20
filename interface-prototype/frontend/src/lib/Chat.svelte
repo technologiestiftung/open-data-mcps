@@ -46,7 +46,11 @@
   function connectWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const port = import.meta.env.DEV ? '3000' : window.location.port;
-    const wsUrl = `${protocol}//${window.location.hostname}:${port}/ws`;
+    const wsUrl =
+      import.meta.env.VITE_BACKEND_WS_URL ||
+      (import.meta.env.DEV
+        ? 'ws://localhost:3000/ws'
+        : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`);
 
     ws = new WebSocket(wsUrl);
 
