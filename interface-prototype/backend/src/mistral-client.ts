@@ -18,8 +18,8 @@ export interface ToolCall {
 type MistralMessage =
   | { role: 'system'; content: string }
   | { role: 'user'; content: string }
-  | { role: 'assistant'; content: string; tool_calls?: Array<{ id: string; type: 'function'; function: { name: string; arguments: string } }> }
-  | { role: 'tool'; content: string; tool_call_id: string };
+  | { role: 'assistant'; content: string; toolCalls?: Array<{ id: string; type: 'function'; function: { name: string; arguments: string } }> }
+  | { role: 'tool'; content: string; toolCallId: string; name?: string };
 
 export class MistralClient {
   private client: Mistral;
@@ -191,7 +191,8 @@ Visualization with create_visualization:
               result.push({
                 role: 'tool',
                 content: block.content || '',
-                tool_call_id: block.tool_use_id
+                toolCallId: block.tool_use_id,
+                name: block.tool_name
               });
             }
           }
@@ -222,7 +223,7 @@ Visualization with create_visualization:
           result.push({
             role: 'assistant',
             content: textParts.join('\n') || '',
-            ...(toolCalls.length > 0 && { tool_calls: toolCalls })
+            ...(toolCalls.length > 0 && { toolCalls })
           });
         }
       }
@@ -358,14 +359,17 @@ Visualization with create_visualization:
 
         if (delta.toolCalls) {
           for (const tc of delta.toolCalls) {
-            const idx = tc.index ?? toolCalls.length;
-            if (tc.id) {
-              toolCalls[idx] = { id: tc.id, name: tc.function?.name ?? '', input: {} };
+            const idx = tc.index ?? 0;
+            // Always initialize slot so the array is never sparse
+            if (!toolCalls[idx]) {
+              toolCalls[idx] = { id: '', name: '', input: {} };
             }
+            // Accumulate id and name as they may arrive in separate chunks
+            if (tc.id) toolCalls[idx].id = tc.id;
+            if (tc.function?.name) toolCalls[idx].name = tc.function.name;
             const args = tc.function?.arguments;
-            if (args) {
-              const prev = toolCallBuffers.get(idx) ?? '';
-              toolCallBuffers.set(idx, prev + (typeof args === 'string' ? args : JSON.stringify(args)));
+            if (typeof args === 'string' && args) {
+              toolCallBuffers.set(idx, (toolCallBuffers.get(idx) ?? '') + args);
             }
           }
         }
@@ -382,12 +386,15 @@ Visualization with create_visualization:
         }
       }
 
+      // Filter out any incomplete tool calls (missing id or name) to keep counts consistent
+      const validToolCalls = toolCalls.filter(tc => tc && tc.id && tc.name);
+
       return {
         content: fullText,
-        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        toolCalls: validToolCalls.length > 0 ? validToolCalls : undefined,
         stopReason: 'stop',
-        fullContent: toolCalls.length > 0
-          ? [{ type: 'text', text: fullText }, ...toolCalls.map(tc => ({ type: 'tool_use', id: tc.id, name: tc.name, input: tc.input }))]
+        fullContent: validToolCalls.length > 0
+          ? [{ type: 'text', text: fullText }, ...validToolCalls.map(tc => ({ type: 'tool_use', id: tc.id, name: tc.name, input: tc.input }))]
           : [{ type: 'text', text: fullText }]
       };
     } catch (error) {
@@ -454,11 +461,11 @@ Visualization with create_visualization:
             }
 
             toolActivityCallback?.({ type: 'complete', toolCallId: toolCall.id, toolName: toolCall.name, result: resultText });
-            toolResults.push({ type: 'tool_result', tool_use_id: toolCall.id, content: resultText });
+            toolResults.push({ type: 'tool_result', tool_use_id: toolCall.id, tool_name: toolCall.name, content: resultText });
           } catch (error) {
             const errMsg = `Error: ${error instanceof Error ? error.message : String(error)}`;
             toolActivityCallback?.({ type: 'complete', toolCallId: toolCall.id, toolName: toolCall.name, result: errMsg, isError: true });
-            toolResults.push({ type: 'tool_result', tool_use_id: toolCall.id, content: errMsg, is_error: true });
+            toolResults.push({ type: 'tool_result', tool_use_id: toolCall.id, tool_name: toolCall.name, content: errMsg, is_error: true });
           }
         }
 
@@ -507,11 +514,11 @@ Visualization with create_visualization:
 
           console.log('[MistralClient] Calling toolActivityCallback (complete):', toolCall.name, toolCall.id);
           toolActivityCallback?.({ type: 'complete', toolCallId: toolCall.id, toolName: toolCall.name, result: resultText });
-          toolResults.push({ type: 'tool_result', tool_use_id: toolCall.id, content: resultText });
+          toolResults.push({ type: 'tool_result', tool_use_id: toolCall.id, tool_name: toolCall.name, content: resultText });
         } catch (error) {
           const errMsg = `Error: ${error instanceof Error ? error.message : String(error)}`;
           toolActivityCallback?.({ type: 'complete', toolCallId: toolCall.id, toolName: toolCall.name, result: errMsg, isError: true });
-          toolResults.push({ type: 'tool_result', tool_use_id: toolCall.id, content: errMsg, is_error: true });
+          toolResults.push({ type: 'tool_result', tool_use_id: toolCall.id, tool_name: toolCall.name, content: errMsg, is_error: true });
         }
       }
 
