@@ -1,4 +1,4 @@
-// ABOUTME: Type definitions for MCP client, WebSocket messages, and Claude API
+// ABOUTME: Type definitions for MCP client, WebSocket messages, and Mistral API
 // ABOUTME: Provides type safety across the backend application
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';

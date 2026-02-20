@@ -7,7 +7,7 @@ Web-based chat interface for the Berlin Open Data MCP server.
 - **Frontend**: Svelte + Vite chat UI (port 5173)
 - **Backend**: Node.js/Express + WebSocket server (port 3000)
 - **MCP Server**: Berlin Open Data MCP (spawned by backend)
-- **AI**: Claude API for conversation orchestration
+- **AI**: Mistral API for conversation orchestration
 
 ## Setup
 
@@ -16,7 +16,7 @@ Web-based chat interface for the Berlin Open Data MCP server.
 npm install
 ```
 
-2. Configure your Claude API key:
+2. Configure your Mistral API key:
 ```bash
 cd backend
 cp .env.example .env
@@ -58,18 +58,18 @@ npm start
 
 ## Project Structure
 
-- `backend/` - Express server, MCP client, Claude API integration
+- `backend/` - Express server, MCP client, Mistral API integration
 - `frontend/` - Svelte chat interface
 
 ## How It Works
 
 1. User types message in web UI
 2. Frontend sends via WebSocket to backend
-3. Backend forwards to Claude API with available MCP tools
-4. Claude decides which tools to call
+3. Backend forwards to Mistral API with available MCP tools
+4. Mistral decides which tools to call
 5. Backend executes tools via Berlin MCP server and streams tool activity to frontend
-6. Backend sends results back to Claude
-7. Claude generates final response
+6. Backend sends results back to Mistral
+7. Mistral generates final response
 8. Backend streams response to frontend
 9. Frontend displays response in chat with tool activity indicators
 
@@ -77,8 +77,8 @@ npm start
 
 The interface shows real-time tool execution to give users visibility into the assistant's work. The display is structured in three parts:
 
-**1. Intro text** (if provided by Claude)
-- Natural language explanation of what Claude is about to do
+**1. Intro text** (if provided by the AI)
+- Natural language explanation of what the AI is about to do
 - Example: "Let me search for traffic datasets..."
 - Streams immediately when Claude responds
 
@@ -91,11 +91,11 @@ The interface shows real-time tool execution to give users visibility into the a
   - Results or error messages
 
 **3. Final response**
-- Claude's response after analyzing tool results
+- The AI's response after analyzing tool results
 - Example: "I found 5 datasets about traffic in Berlin..."
 
 **Implementation:**
-- Backend extracts intro text from Claude's response (if present) and streams it immediately
+- Backend extracts intro text from the AI's response (if present) and streams it immediately
 - Backend emits `tool_call_start` when tool execution begins
 - Backend emits `tool_call_complete` when tool finishes (with result or error)
 - Backend streams final response after tools complete
@@ -104,7 +104,7 @@ The interface shows real-time tool execution to give users visibility into the a
 
 ## File Upload
 
-Users can upload data files for analysis, similar to Claude Desktop.
+Users can upload data files for analysis.
 
 **Supported formats:**
 - CSV (`.csv`)
@@ -119,7 +119,7 @@ Users can upload data files for analysis, similar to Claude Desktop.
 2. Select a file (or remove it by clicking ×)
 3. Optionally add a message describing what you want to analyze
 4. Send - the file is parsed and cached server-side
-5. Claude can analyze the data using the `execute_code` tool
+5. The AI can analyze the data using the `execute_code` tool
 
 **Technical details:**
 - Files are base64-encoded and sent via WebSocket
@@ -137,7 +137,7 @@ npm test
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | Your Claude API key |
+| `MISTRAL_API_KEY` | Yes | Your Mistral API key (from https://console.mistral.ai/) |
 | `PORT` | No | Backend port (default: 3000) |
 | `BOD_MCP_URL` | No | URL to remote Berlin Open Data MCP (e.g., `https://bod-mcp.up.railway.app`) |
 | `DATAWRAPPER_MCP_URL` | No | URL to remote Datawrapper MCP |

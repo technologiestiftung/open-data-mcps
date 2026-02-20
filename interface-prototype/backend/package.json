@@ -11,7 +11,8 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.2",
+    "@mistralai/mistralai": "^1.14.0",
+    "@mistralai/mistralai": "^1.14.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.2.3",

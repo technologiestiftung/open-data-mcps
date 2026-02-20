@@ -1,5 +1,5 @@
 // ABOUTME: Main Express server with WebSocket support
-// ABOUTME: Initializes MCP client, Claude client, and serves frontend
+// ABOUTME: Initializes MCP client, Mistral client, and serves frontend
 
 import 'dotenv/config';
 import express from 'express';
@@ -9,7 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { MCPClientManager, findBerlinMCPPath } from './mcp-client.js';
 import { HTTPMCPClient } from './http-mcp-client.js';
-import { ClaudeClient } from './claude-client.js';
+import { MistralClient } from './mistral-client.js';
 import { WebSocketHandler } from './websocket-handler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,14 +17,14 @@ const __dirname = path.dirname(__filename);
 
 // Configuration
 const PORT = process.env.PORT || 3000;
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
 const DATAWRAPPER_API_KEY = process.env.DATAWRAPPER_API_KEY;
 const DATAWRAPPER_MCP_AUTH_TOKEN = process.env.DATAWRAPPER_MCP_AUTH_TOKEN;
 const BOD_MCP_URL = process.env.BOD_MCP_URL;
 const DATAWRAPPER_MCP_URL = process.env.DATAWRAPPER_MCP_URL;
 
-if (!ANTHROPIC_API_KEY) {
-  console.error('Error: ANTHROPIC_API_KEY environment variable is required');
+if (!MISTRAL_API_KEY) {
+  console.error('Error: MISTRAL_API_KEY environment variable is required');
   process.exit(1);
 }
 
@@ -80,8 +80,8 @@ async function main() {
       console.warn('DATAWRAPPER_API_KEY not set and DATAWRAPPER_MCP_URL not configured - visualization features disabled');
     }
 
-    // Initialize Claude client
-    const claudeClient = new ClaudeClient(ANTHROPIC_API_KEY!);
+    // Initialize Mistral client
+    const mistralClient = new MistralClient(MISTRAL_API_KEY!);
 
     // Create Express app
     const app = express();
@@ -92,7 +92,7 @@ async function main() {
     const wss = new WebSocketServer({ server, path: '/ws' });
 
     // Create WebSocket handler with both MCP clients
-    const wsHandler = new WebSocketHandler(berlinMcpClient, claudeClient, datawrapperMcpClient);
+    const wsHandler = new WebSocketHandler(berlinMcpClient, mistralClient, datawrapperMcpClient);
 
     // Handle WebSocket connections
     wss.on('connection', (ws) => {

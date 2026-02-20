@@ -5,13 +5,13 @@
   Hybrid tool activity display:
 
   DURING EXECUTION:
-  - Shows Claude's thinking text before each tool (introText)
+  - Shows AI's thinking text before each tool (introText)
   - Shows active tools with animated spinner
   - Displays friendly tool name (e.g., "Searching Berlin Datasets...")
   - Multiple tools can be shown simultaneously
 
   AFTER COMPLETION:
-  - Shows Claude's thinking text before each tool (introText)
+  - Shows AI's thinking text before each tool (introText)
   - Shows collapsible badge: "🔧 Tool Name"
   - Clicking expands to show details for each tool:
     - Tool name and error status
@@ -24,7 +24,7 @@
     - name: tool name (snake_case from MCP)
     - args: arguments object
     - completed: boolean
-    - introText: Claude's thinking before this tool (optional)
+    - introText: AI's thinking before this tool (optional)
     - result: result text (if completed)
     - isError: boolean (if completed with error)
 -->

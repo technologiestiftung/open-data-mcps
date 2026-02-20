@@ -1,10 +1,10 @@
 // ABOUTME: WebSocket handler for real-time communication with frontend
-// ABOUTME: Processes user messages and streams Claude responses back
+// ABOUTME: Processes user messages and streams Mistral responses back
 
 import type { WebSocket } from 'ws';
 import type { MCPClientManager } from './mcp-client.js';
 import type { HTTPMCPClient } from './http-mcp-client.js';
-import type { ClaudeClient } from './claude-client.js';
+import type { MistralClient } from './mistral-client.js';
 import type { ConversationMessage, WebSocketMessage, UserMessage, FileUpload } from './types.js';
 import { CodeExecutor } from './code-executor.js';
 import * as XLSX from 'xlsx';
@@ -17,7 +17,7 @@ export class WebSocketHandler {
 
   constructor(
     private berlinMcpClient: MCPClientManager | HTTPMCPClient,
-    private claudeClient: ClaudeClient,
+    private mistralClient: MistralClient,
     private datawrapperMcpClient?: MCPClientManager | HTTPMCPClient
   ) {
     this.codeExecutor = new CodeExecutor();
@@ -79,7 +79,7 @@ export class WebSocketHandler {
   }
 
   /**
-   * Process user message and get Claude response
+   * Process user message and get Mistral response
    */
   private async handleUserMessage(ws: WebSocket, message: UserMessage): Promise<void> {
     const { content } = message;
@@ -115,8 +115,8 @@ export class WebSocketHandler {
 
       const tools = [...mcpTools, codeExecutionTool];
 
-      // Send to Claude with tool execution callback and streaming
-      const result = await this.claudeClient.sendMessageWithTools(
+      // Send to Mistral with tool execution callback and streaming
+      const result = await this.mistralClient.sendMessageWithTools(
         content,
         history,
         tools,
@@ -241,7 +241,7 @@ export class WebSocketHandler {
                   datasetCache.set(dataset_id, parsedData);
                   console.log('[fetch_dataset_data] Cached', parsedData.length, 'rows for', dataset_id);
 
-                  // STRIP the full data JSON block from result before sending to Claude
+                  // STRIP the full data JSON block from result before sending to Mistral
                   // This prevents context overflow while keeping the data cached for execute_code
                   // Keep the preview (first JSON block), remove the full dataset (last JSON block)
                   resultText = resultText.substring(0, lastMatch.index) +
@@ -418,7 +418,7 @@ export class WebSocketHandler {
       // Get column names for context
       const columns = parsedData.length > 0 ? Object.keys(parsedData[0]) : [];
 
-      // Create enhanced message that tells Claude about the upload
+      // Create enhanced message that tells Mistral about the upload
       const enhancedContent = content
         ? `${content}\n\n[User uploaded file: ${file.name} (${parsedData.length} rows, columns: ${columns.join(', ')}). Data cached as "${uploadId}" - use execute_code with dataset_id="${uploadId}" to analyze it.]`
         : `[User uploaded file: ${file.name} (${parsedData.length} rows, columns: ${columns.join(', ')}). Data cached as "${uploadId}" - use execute_code with dataset_id="${uploadId}" to analyze it.]`;

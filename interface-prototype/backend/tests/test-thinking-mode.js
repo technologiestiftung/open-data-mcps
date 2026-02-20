@@ -1,10 +1,10 @@
-// Test script to verify extended thinking mode helps with follow-up questions
-// This tests whether Claude can avoid repeating previous answers
+// Test script to verify Mistral follows conversation rules for follow-up questions
+// Tests whether the model can avoid repeating previous answers when not asked
 
-import Anthropic from '@anthropic-ai/sdk';
+import { Mistral } from '@mistralai/mistralai';
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const client = new Mistral({
+  apiKey: process.env.MISTRAL_API_KEY
 });
 
 const systemPrompt = `You are an assistant helping users with questions about Berlin population data.
@@ -41,8 +41,8 @@ const populationData = {
   'Spandau': 259277
 };
 
-async function testWithThinking() {
-  console.log('\n=== Testing WITH Extended Thinking ===\n');
+async function testConversationRule() {
+  console.log('\n=== Testing Mistral conversation rule ===\n');
 
   const messages = [
     {
@@ -71,89 +71,23 @@ Gesamtbevölkerung Berlin: 3.897.145`
     }
   ];
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-5',
-    max_tokens: 12000,
-    system: systemPrompt,
-    messages: messages,
-    thinking: {
-      type: 'enabled',
-      budget_tokens: 8000
-    }
+  const response = await client.chat.complete({
+    model: 'mistral-small-latest',
+    maxTokens: 2048,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...messages
+    ]
   });
 
-  console.log('Response content blocks:', response.content.length);
-
-  // Extract thinking and text
-  const thinkingBlock = response.content.find(block => block.type === 'thinking');
-  const textBlock = response.content.find(block => block.type === 'text');
-
-  if (thinkingBlock) {
-    console.log('\n--- THINKING PROCESS ---');
-    console.log(thinkingBlock.thinking);
-    console.log('--- END THINKING ---\n');
-  } else {
-    console.log('\n⚠️  No thinking block found\n');
-  }
+  const textContent = response.choices?.[0]?.message?.content ?? '';
 
   console.log('--- RESPONSE ---');
-  console.log(textBlock?.text || 'No text block found');
+  console.log(textContent);
   console.log('--- END RESPONSE ---\n');
 
-  // Check if response mentions Lichtenberg
-  const mentionsLichtenberg = textBlock?.text?.toLowerCase().includes('lichtenberg');
-  console.log('\n✓ Test Result:');
-  console.log(`  Mentions Lichtenberg: ${mentionsLichtenberg ? '❌ YES (should be NO)' : '✅ NO (correct!)'}`);
-
-  return mentionsLichtenberg;
-}
-
-async function testWithoutThinking() {
-  console.log('\n=== Testing WITHOUT Extended Thinking ===\n');
-
-  const messages = [
-    {
-      role: 'user',
-      content: 'Was ist die Bevölkerungszahl der einzelnen Berliner Bezirke?'
-    },
-    {
-      role: 'assistant',
-      content: `Hier sind die Bevölkerungszahlen der Berliner Bezirke:
-
-${Object.entries(populationData).map(([bezirk, pop]) => `${bezirk}: ${pop.toLocaleString('de-DE')}`).join('\n')}
-
-Gesamtbevölkerung Berlin: 3.897.145`
-    },
-    {
-      role: 'user',
-      content: 'Wieviele Menschen wohnen in Lichtenberg?'
-    },
-    {
-      role: 'assistant',
-      content: 'Nach den Daten vom 31.12.2024 wohnen 315.548 Menschen in Lichtenberg.'
-    },
-    {
-      role: 'user',
-      content: 'Wieviele Bezirke haben mehr Bewohner als Neukölln?'
-    }
-  ];
-
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-5',
-    max_tokens: 2048,
-    system: systemPrompt,
-    messages: messages
-    // No thinking parameter
-  });
-
-  const textBlock = response.content.find(block => block.type === 'text');
-
-  console.log('--- RESPONSE ---');
-  console.log(textBlock?.text || 'No text block found');
-  console.log('--- END RESPONSE ---\n');
-
-  // Check if response mentions Lichtenberg
-  const mentionsLichtenberg = textBlock?.text?.toLowerCase().includes('lichtenberg');
+  // Check if response mentions Lichtenberg (should NOT - user didn't ask about it)
+  const mentionsLichtenberg = textContent.toLowerCase().includes('lichtenberg');
   console.log('\n✓ Test Result:');
   console.log(`  Mentions Lichtenberg: ${mentionsLichtenberg ? '❌ YES (should be NO)' : '✅ NO (correct!)'}`);
 
@@ -162,7 +96,7 @@ Gesamtbevölkerung Berlin: 3.897.145`
 
 async function main() {
   try {
-    console.log('Testing whether extended thinking helps Claude avoid repeating previous answers\n');
+    console.log('Testing whether Mistral follows conversation rules for follow-up questions\n');
     console.log('Scenario: User asks 3 questions in sequence:');
     console.log('  1. "Was ist die Bevölkerungszahl der einzelnen Berliner Bezirke?"');
     console.log('  2. "Wieviele Menschen wohnen in Lichtenberg?"');
@@ -170,30 +104,19 @@ async function main() {
     console.log('\nExpected: Question 3 should NOT mention Lichtenberg\n');
     console.log('='.repeat(70));
 
-    const withoutThinkingMentions = await testWithoutThinking();
-    const withThinkingMentions = await testWithThinking();
+    const mentionsLichtenberg = await testConversationRule();
 
     console.log('\n' + '='.repeat(70));
     console.log('SUMMARY');
     console.log('='.repeat(70));
-    console.log(`WITHOUT thinking: ${withoutThinkingMentions ? '❌ Mentions Lichtenberg' : '✅ Does not mention Lichtenberg'}`);
-    console.log(`WITH thinking:    ${withThinkingMentions ? '❌ Mentions Lichtenberg' : '✅ Does not mention Lichtenberg'}`);
-
-    if (!withoutThinkingMentions && !withThinkingMentions) {
-      console.log('\n✅ Both approaches work! The prompt improvements alone may have fixed it.');
-    } else if (withoutThinkingMentions && !withThinkingMentions) {
-      console.log('\n✅ Extended thinking SOLVES the issue!');
-    } else if (withoutThinkingMentions && withThinkingMentions) {
-      console.log('\n❌ Extended thinking does NOT solve the issue.');
-    } else {
-      console.log('\n❓ Unexpected result - neither mentions Lichtenberg with thinking but does without?');
-    }
+    console.log(`Result: ${mentionsLichtenberg ? '❌ Mentions Lichtenberg (unnecessary)' : '✅ Does not mention Lichtenberg (correct)'}`);
 
   } catch (error) {
     console.error('Error:', error.message);
     if (error.response) {
       console.error('API Error:', error.response.data);
     }
+    process.exit(1);
   }
 }
 
