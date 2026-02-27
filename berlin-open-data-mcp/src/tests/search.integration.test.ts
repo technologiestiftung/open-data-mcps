@@ -7,8 +7,8 @@
  * but "does a natural language user input survive our processing and surface relevant datasets?"
  */
 import { describe, it, expect } from 'vitest';
-import { BerlinOpenDataAPI } from '../src/berlin-api.js';
-import { QueryProcessor } from '../src/query-processor.js';
+import { BerlinOpenDataAPI } from '../berlin-api.js';
+import { QueryProcessor } from '../query-processor.js';
 
 const api = new BerlinOpenDataAPI();
 const qp = new QueryProcessor();

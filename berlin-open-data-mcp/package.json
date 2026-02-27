@@ -11,9 +11,9 @@
     "dev": "tsx src/index.ts",
     "dev:http": "tsx src/http-server.ts",
     "dev:browser": "tsx src/browser-fetcher.ts",
-    "test": "vitest run --reporter=verbose tests/query-processor.test.ts",
-    "test:watch": "vitest tests/query-processor.test.ts",
-    "test:integration": "vitest run --reporter=verbose tests/search.integration.test.ts"
+    "test": "vitest run --reporter=verbose src/tests/query-processor.test.ts",
+    "test:watch": "vitest src/tests/query-processor.test.ts",
+    "test:integration": "vitest run --reporter=verbose src/tests/search.integration.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",

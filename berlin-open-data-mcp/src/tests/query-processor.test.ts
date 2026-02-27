@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { QueryProcessor } from '../src/query-processor.js';
+import { QueryProcessor } from '../query-processor.js';
 
 const qp = new QueryProcessor();
 
