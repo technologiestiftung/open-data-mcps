@@ -131,8 +131,10 @@ export class BerlinOpenDataAPI {
     }
 
     if (fqFilters.length > 0) {
-      // Pass as array → repeated fq= params, ANDed by Solr
-      searchParams.fq = fqFilters;
+      // Join as a single fq string with AND. Multiple fq= URL params cause CKAN
+      // to collect them as a Python list, then JSON-serialise the whole list into
+      // one Solr fq value — producing invalid syntax that Solr rejects (HTTP 400).
+      searchParams.fq = fqFilters.join(' AND ');
     }
 
     const result = await this.makeRequest('package_search', searchParams);
