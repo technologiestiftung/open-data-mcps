@@ -493,8 +493,9 @@ export class BerlinOpenDataMCPServer {
               };
             }
 
-            // Fetch the data (sample for analysis, not full dataset)
-            const fetchedData = await this.dataFetcher.fetchResource(resource.url, resource.format, { fullData: false });
+            // Fetch the data. For WFS large datasets this returns a sample; fullData: true
+            // will be requested below if the user asked for it and size permits.
+            let fetchedData = await this.dataFetcher.fetchResource(resource.url, resource.format, { fullData: false });
 
             if (fetchedData.error) {
               return {
@@ -505,7 +506,10 @@ export class BerlinOpenDataMCPServer {
               };
             }
 
-            const totalRows = fetchedData.rows.length;
+            // Use totalRows from the fetcher (accurate for WFS via getFeatureCount;
+            // equals rows.length for CSV/JSON/XLSX which always load everything).
+            const totalRows = fetchedData.totalRows;
+            const isSampled = fetchedData.rows.length < totalRows;
             const isLarge = totalRows > LARGE_DATASET_THRESHOLD;
             const sizeLabel = isLarge ? 'large' : 'small';
 
@@ -522,6 +526,20 @@ export class BerlinOpenDataMCPServer {
               };
             }
 
+            // If full data was requested and we only have a sample (e.g. WFS large dataset),
+            // re-fetch with fullData: true now that we know the size is within limits.
+            if (full_data && isSampled) {
+              fetchedData = await this.dataFetcher.fetchResource(resource.url, resource.format, { fullData: true });
+              if (fetchedData.error) {
+                return {
+                  content: [{
+                    type: 'text',
+                    text: `❌ Error fetching full data: ${fetchedData.error}\n\nYou can try downloading manually from: ${resource.url}`,
+                  }],
+                };
+              }
+            }
+
             if (!isLarge) {
               // Enrich data with LOR names if applicable
               const lorInfo = this.lorLookup.hasLORColumns(fetchedData.columns);
@@ -532,7 +550,10 @@ export class BerlinOpenDataMCPServer {
               }
 
               const displayColumns = enrichedRows.length > 0 ? Object.keys(enrichedRows[0]) : fetchedData.columns;
-              responseText += `**Rows**: ${totalRows} | **Columns (${displayColumns.length}):** ${displayColumns.join(', ')}\n\n`;
+              const sampledNote = isSampled && !full_data
+                ? ` *(showing ${enrichedRows.length} of ${totalRows} — use \`full_data: true\` to fetch all)*`
+                : '';
+              responseText += `**Rows**: ${totalRows}${sampledNote} | **Columns (${displayColumns.length}):** ${displayColumns.join(', ')}\n\n`;
 
               if (this.lorLookup.isLoaded() && (lorInfo.hasBEZ || lorInfo.hasRAUMID)) {
                 responseText += `**📍 LOR Enrichment:** Automatically enriched with Berlin administrative district names.\n`;

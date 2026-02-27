@@ -592,7 +592,7 @@ export class DataFetcher {
         allFeatures = features.features;
         console.error(`[DataFetcher] Received ${allFeatures.length} total features`);
       } else {
-        // For analysis of large datasets, fetch only first 10 features as sample
+        // Large dataset with known count — fetch a representative sample
         console.error(`[DataFetcher] Large dataset (${totalCount} features), fetching sample of 10...`);
 
         const sample = await wfsClient.getFeatures(
