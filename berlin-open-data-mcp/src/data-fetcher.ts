@@ -3,7 +3,7 @@
 
 import fetch from 'node-fetch';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { BrowserFetcher } from './browser-fetcher.js';
 import { DOMParser } from '@xmldom/xmldom';
 import * as toGeoJSON from '@tmcw/togeojson';
@@ -84,7 +84,7 @@ export class DataFetcher {
           contentType.includes('excel') ||
           contentType.includes('ms-excel')) {
         const arrayBuffer = await response.arrayBuffer();
-        return this.parseExcel(Buffer.from(arrayBuffer), format);
+        return await this.parseExcel(Buffer.from(arrayBuffer), format);
       }
 
       // For text formats (CSV, JSON), get as text
@@ -415,14 +415,25 @@ export class DataFetcher {
     }
   }
 
-  private parseExcel(buffer: Buffer, format: string): FetchedData {
+  private async parseExcel(buffer: Buffer, format: string): Promise<FetchedData> {
     try {
-      // Read the Excel file from buffer
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const workbook = new ExcelJS.Workbook();
 
-      // Get first sheet
-      const sheetName = workbook.SheetNames[0];
-      if (!sheetName) {
+      try {
+        const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+        await workbook.xlsx.load(ab as ArrayBuffer);
+      } catch {
+        return {
+          format,
+          rows: [],
+          totalRows: 0,
+          columns: [],
+          error: 'Could not parse Excel file — old .xls binary format is not supported. Please use the CSV version of this dataset if available.',
+        };
+      }
+
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet) {
         return {
           format,
           rows: [],
@@ -432,16 +443,11 @@ export class DataFetcher {
         };
       }
 
-      const sheet = workbook.Sheets[sheetName];
+      // Row values are 1-indexed; index 0 is always undefined in ExcelJS
+      const headerValues = worksheet.getRow(1).values as (ExcelJS.CellValue | undefined)[];
+      const headers = headerValues.slice(1).map(v => String(v ?? ''));
 
-      // Convert to JSON (array of objects)
-      const rows = XLSX.utils.sheet_to_json(sheet) as any[];
-
-      // Extract column names
-      const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
-
-      // Sanity check
-      if (rows.length === 0 || columns.length === 0) {
+      if (headers.length === 0) {
         return {
           format,
           rows: [],
@@ -451,11 +457,32 @@ export class DataFetcher {
         };
       }
 
+      const rows: any[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return;
+        const rowObj: any = {};
+        headers.forEach((header, idx) => {
+          const cell = row.getCell(idx + 1);
+          rowObj[header] = cell.value;
+        });
+        rows.push(rowObj);
+      });
+
+      if (rows.length === 0) {
+        return {
+          format,
+          rows: [],
+          totalRows: 0,
+          columns: [],
+          error: 'Excel file appears to be empty or has no data rows',
+        };
+      }
+
       return {
         format: format.toUpperCase(),
         rows,
         totalRows: rows.length,
-        columns,
+        columns: headers,
       };
     } catch (error) {
       return {
