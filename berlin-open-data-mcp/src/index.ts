@@ -196,7 +196,7 @@ export class BerlinOpenDataMCPServer {
         },
         {
           name: 'fetch_dataset_data',
-          description: 'VIEW dataset content in the chat for analysis. Returns a preview (10 sample rows) or full data for small datasets. Supports CSV, JSON, Excel (XLS/XLSX), GeoJSON, KML, and WFS formats. WFS data is automatically converted to tabular format. Does NOT support ZIP archives (provides direct download URL instead). Use when user wants to SEE/ANALYZE data, not download it. Keywords: "zeig mir", "schau dir an", "wie sieht aus", "analysiere".',
+          description: 'VIEW dataset content in the chat for analysis. Returns a preview plus value distributions for all columns. Supports CSV, JSON, Excel (XLS/XLSX), GeoJSON, KML, and WFS formats. WFS data is automatically converted to tabular format. Does NOT support ZIP archives (provides direct download URL instead). Use when user wants to SEE/ANALYZE data, not download it. Keywords: "zeig mir", "schau dir an", "wie sieht aus", "analysiere". IMPORTANT: For WFS datasets, the default call returns only a 10-row sample. If the response shows "showing X of N — use full_data: true to fetch all", you MUST immediately call again with full_data: true to get column value distributions needed for counting, filtering, or aggregating. Never try to answer aggregation questions (counts, totals, breakdowns) from a 10-row sample.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -210,7 +210,7 @@ export class BerlinOpenDataMCPServer {
               },
               full_data: {
                 type: 'boolean',
-                description: 'If true, return all data for small datasets (≤500 rows). Refused for large datasets.',
+                description: 'Set to true to fetch the complete dataset with value distributions for all columns. Required for any counting, filtering, or aggregation task. For WFS datasets with >500 features, this is the only way to get column distributions. Rejected only if dataset exceeds 1000 rows.',
                 default: false,
               },
             },
