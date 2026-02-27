@@ -26,17 +26,55 @@ export interface BerlinDataset {
   maintainer?: string;
 }
 
+export interface FacetItem {
+  name: string;
+  display_name: string;
+  count: number;
+}
+
+export interface FacetCounts {
+  tags?: FacetItem[];
+  organization?: FacetItem[];
+  groups?: FacetItem[];
+  res_format?: FacetItem[];
+}
+
 export interface SearchResult {
   count: number;
   results: BerlinDataset[];
+  facets?: FacetCounts;
 }
 
 export interface DatasetSearchParams {
   query: string;
   limit?: number;
   offset?: number;
+  /** Filter by one or more tags (joined as OR in fq) */
   tags?: string[];
   organization?: string;
+  /** Filter to datasets with at least one resource in this format (e.g. "CSV", "WFS") */
+  format?: string;
+  /** Only return datasets modified after this ISO date string (e.g. "2023-01-01") */
+  modifiedSince?: string;
+  /**
+   * Sort expression. Default: 'score desc, metadata_modified desc'.
+   * Use 'metadata_modified desc' for newest-first.
+   */
+  sort?: string;
+  /** Convenience flag: sets sort='metadata_modified desc'. Overridden by explicit sort. */
+  sortByDate?: boolean;
+}
+
+/** Shape for search_datasets_filtered tool params — mapped to fq in berlin-api */
+export interface FilteredSearchParams {
+  query: string;
+  limit?: number;
+  offset?: number;
+  organization?: string;
+  tag?: string;
+  format?: string;
+  modified_since?: string;
+  sort?: string;
 }
 
 export interface PortalStats {

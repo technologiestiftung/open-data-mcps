@@ -88,21 +88,102 @@ export class BerlinOpenDataMCPServer {
       tools: [
         {
           name: 'search_berlin_datasets',
-          description: 'Search Berlin open datasets using natural language queries. Perfect for discovering data about transportation, environment, demographics, etc.',
+          description: 'Search Berlin open datasets using natural language queries in German or English. Automatically expands synonyms (e.g. "bicycle" → fahrrad, radverkehr) and sends a single OR-joined edismax query with field weighting (title^5 tags^3 notes^2). Results are sorted by relevance then recency.',
           inputSchema: {
             type: 'object',
             properties: {
               query: {
                 type: 'string',
-                description: 'Natural language search query in German or English (e.g., "bicycle infrastructure", "Luftqualität", "public transport data")',
+                description: 'Natural language search query in German or English (e.g. "bicycle infrastructure", "Luftqualität Berlin", "Einwohner 2024")',
               },
               limit: {
                 type: 'number',
                 description: 'Maximum number of results to return (default: 20)',
                 default: 20,
               },
+              sort: {
+                type: 'string',
+                description: 'Sort order. Default: "score desc, metadata_modified desc" (relevance first, then recency). Use "metadata_modified desc" for newest-first.',
+              },
             },
             required: ['query'],
+          },
+        },
+        {
+          name: 'search_datasets_filtered',
+          description: 'Structured search with explicit filters for organization, tag, file format, and date. Filters map to Solr fq (cached, zero-cost for scoring). Always returns facet counts so you can refine further. Use after get_facets to do a two-step discovery → filter workflow.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Free-text search query (German or English). Use "*" to match everything when only filtering.',
+                default: '*',
+              },
+              organization: {
+                type: 'string',
+                description: 'Filter to a specific publishing organization slug (e.g. "senuvk", "statistik-berlin-brandenburg"). Use list_organizations to discover slugs.',
+              },
+              tag: {
+                type: 'string',
+                description: 'Filter to a specific tag (e.g. "luftqualitaet", "radverkehr"). Use list_tags or get_facets to discover available tags.',
+              },
+              format: {
+                type: 'string',
+                description: 'Filter to datasets that have at least one resource in this format (e.g. "CSV", "JSON", "WFS", "XLSX").',
+              },
+              modified_since: {
+                type: 'string',
+                description: 'Only return datasets modified after this date (ISO 8601, e.g. "2023-01-01").',
+              },
+              sort: {
+                type: 'string',
+                description: 'Sort order. Default: "score desc, metadata_modified desc". Use "metadata_modified desc" for newest-first.',
+                default: 'score desc, metadata_modified desc',
+              },
+              rows: {
+                type: 'number',
+                description: 'Number of results to return (default: 20).',
+                default: 20,
+              },
+            },
+          },
+        },
+        {
+          name: 'get_facets',
+          description: 'Returns top tags, organizations, and file formats associated with a query without fetching any actual datasets (rows=0). Use this as a fast first step to discover the taxonomy of a topic, then call search_datasets_filtered with the relevant fq values.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Topic query to get facets for (e.g. "Radverkehr", "Luftqualität Berlin"). Use "*" to get overall portal facets.',
+                default: '*',
+              },
+              limit: {
+                type: 'number',
+                description: 'Maximum facet items to return per field (default: 10).',
+                default: 10,
+              },
+            },
+          },
+        },
+        {
+          name: 'list_tags',
+          description: 'List available tags from the Berlin Open Data Portal, optionally filtered by a prefix query. Use for tag autocomplete when building fq filters for search_datasets_filtered.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Optional prefix to filter tags (e.g. "luft" returns "luftqualitaet", "luftverkehr", …).',
+              },
+              limit: {
+                type: 'number',
+                description: 'Maximum number of tags to return (default: 50).',
+                default: 50,
+              },
+            },
           },
         },
         {
@@ -219,177 +300,34 @@ export class BerlinOpenDataMCPServer {
       try {
         switch (name) {
           case 'search_berlin_datasets': {
-            const { query, limit = 20 } = args as { query: string; limit?: number };
+            const { query, limit = 20, sort } = args as {
+              query: string;
+              limit?: number;
+              sort?: string;
+            };
 
-            // Four-Tier Search Strategy for Optimal Relevance
-            // =================================================
-            //
-            // TIER 1 - Expansion Search (Broad Coverage):
-            //   Expands query terms using portal metadata mappings
-            //   Example: "Einwohner" → ["Einwohnerinnen", "Kleinräumige einwohnerzahl", ...]
-            //   Purpose: Find all potentially relevant datasets (high recall)
-            //
-            // TIER 2 - Smart Fallback Detection:
-            //   Checks if top 5 expansion results contain ALL user's key terms
-            //   Purpose: Detect when expansion search found exact matches
-            //
-            // TIER 3 - Literal Search + Year Boosting (Precision):
-            //   If no exact match in top 5, runs literal CKAN search
-            //   Applies position-based scoring (1st=1000, 2nd=999, etc.)
-            //   Adds +1000 bonus for datasets containing query year
-            //   Purpose: Ensure specific queries return exact matches first
-            //   Example: "Einwohner 2024" → 2024 dataset ranked #1 (not 2020/2019)
-            //
-            // TIER 4 - Recency Boost (Temporal Relevance):
-            //   Extracts years from all dataset titles and boosts recent datasets
-            //   Current year: +50, Last year: +40, 2 years ago: +30, etc.
-            //   Purpose: Prefer recent data when no year specified in query
-            //   Example: "Bevölkerung" → 2024 datasets ranked above 2019
-            //
-            // Result: Best of all worlds - broad coverage + precise ranking + temporal relevance
+            // Build a single OR-joined edismax query.
+            // Synonyms from SEED_MAPPINGS are folded in client-side so Solr
+            // scores all matching terms natively in one round trip.
+            // "bicycle infrastructure" → "(bicycle OR fahrrad OR radverkehr OR infrastructure)"
+            const builtQuery = this.queryProcessor.buildQuery(query);
+            const result = await this.api.searchDatasets({ query: builtQuery, limit, sort });
 
-            // STEP 1: Expansion Search
-            const searchTerms = this.queryProcessor.extractSearchTerms(query);
-
-            // Search for each term separately and combine results
-            // Use higher limit per term to ensure we capture all relevant datasets
-            // Example: "Einwohnerinnen" finds 2024 LOR dataset at position 41
-            const searchPromises = searchTerms.map(term =>
-              this.api.searchDatasets({ query: term, limit: 100 })
-            );
-
-            const allResults = await Promise.all(searchPromises);
-
-            // Merge and deduplicate results by dataset ID
-            const datasetMap = new Map<string, { dataset: any; matchCount: number; isLiteral: boolean }>();
-
-            allResults.forEach(result => {
-              result.results.forEach(dataset => {
-                if (datasetMap.has(dataset.id)) {
-                  // Dataset already found - increment match count
-                  datasetMap.get(dataset.id)!.matchCount++;
-                } else {
-                  // New dataset - add it
-                  datasetMap.set(dataset.id, { dataset, matchCount: 1, isLiteral: false });
-                }
-              });
-            });
-
-            // STEP 2: Smart Fallback - Check if expansion search found exact matches
-            // Extract key terms from original query (including years and significant words)
-            const cleanedQuery = query.replace(/\b(find|search|show|me|list|all|datasets?|about|in|for|the|and)\b/gi, '').trim();
-            const keyTerms = cleanedQuery.split(/\s+/).filter(term =>
-              term.length >= 3 || /^\d{4}$/.test(term) // Include 4-digit years
-            );
-
-            // Get top 5 results from expansion search to check quality
-            const topExpansionResults = Array.from(datasetMap.values())
-              .sort((a, b) => b.matchCount - a.matchCount)
-              .slice(0, 5)
-              .map(item => item.dataset);
-
-            // Check if any top result contains ALL user's key terms (exact match)
-            const hasExactMatch = topExpansionResults.some(dataset => {
-              const searchableText = `${dataset.title} ${dataset.name} ${dataset.notes || ''}`.toLowerCase();
-              return keyTerms.every(term => searchableText.includes(term.toLowerCase()));
-            });
-
-            // STEP 3: Literal Search Fallback (if expansion didn't find exact match)
-            // This ensures specific queries like "Einwohner 2024" return the 2024 dataset first,
-            // even if expansion search ranked older datasets higher due to more term matches
-            if (!hasExactMatch && cleanedQuery.length > 0) {
-              const literalResult = await this.api.searchDatasets({ query: cleanedQuery, limit: limit });
-
-              // Detect if query contains a year for temporal relevance boosting
-              const yearMatch = cleanedQuery.match(/\b(\d{4})\b/);
-              const queryYear = yearMatch ? yearMatch[1] : null;
-
-              // Apply position-based scoring to literal results
-              // CKAN returns most relevant first, so we trust its ranking
-              literalResult.results.forEach((dataset, index) => {
-                // Base score: Position-based (1000, 999, 998, ...)
-                let positionBoost = 1000 - index;
-
-                // Temporal relevance boost: Add +1000 if dataset contains query year
-                // Example: "Einwohner 2024" → datasets with "2024" get massive boost
-                if (queryYear) {
-                  const datasetText = `${dataset.title} ${dataset.name}`.toLowerCase();
-                  if (datasetText.includes(queryYear)) {
-                    positionBoost += 1000;
-                  }
-                }
-
-                if (datasetMap.has(dataset.id)) {
-                  // Dataset already found by expansion - override score with literal match score
-                  const item = datasetMap.get(dataset.id)!;
-                  item.isLiteral = true;
-                  item.matchCount = positionBoost;
-                } else {
-                  // New dataset from literal search - add with high priority
-                  datasetMap.set(dataset.id, { dataset, matchCount: positionBoost, isLiteral: true });
-                }
-              });
-            }
-
-            // STEP 4: Apply recency boost to all results
-            // Extract years from dataset titles and boost recent years
-            const currentYear = new Date().getFullYear();
-
-            for (const item of datasetMap.values()) {
-              const dataset = item.dataset;
-              const titleText = `${dataset.title} ${dataset.name}`;
-
-              // Extract all 4-digit years from title (2000-2099)
-              const years = titleText.match(/\b(20\d{2})\b/g);
-
-              if (years && years.length > 0) {
-                // Get the most recent year mentioned
-                const mostRecentYear = Math.max(...years.map(y => parseInt(y)));
-
-                // Calculate recency score based on age
-                const yearsDiff = currentYear - mostRecentYear;
-
-                if (yearsDiff === 0) {
-                  item.matchCount += 50;
-                } else if (yearsDiff === 1) {
-                  item.matchCount += 40;
-                } else if (yearsDiff === 2) {
-                  item.matchCount += 30;
-                } else if (yearsDiff <= 5) {
-                  item.matchCount += 20;
-                } else if (yearsDiff <= 10) {
-                  item.matchCount += 10;
-                }
-                // Older datasets get no boost
-              }
-            }
-
-            // Sort by match count (literal matches + recency boosted to top)
-            const combinedResults = Array.from(datasetMap.values())
-              .sort((a, b) => b.matchCount - a.matchCount)
-              .slice(0, limit)
-              .map(item => item.dataset);
-
-            const totalUnique = datasetMap.size;
-
-            // Create a conversational, structured response
             let responseText = `# Search Results for "${query}"\n\n`;
 
-            if (combinedResults.length === 0) {
-              responseText += "I couldn't find any datasets matching your query. Try:\n";
+            if (result.results.length === 0) {
+              responseText += "No datasets found. Try:\n";
               responseText += "- Using different keywords\n";
               responseText += "- Searching in German (e.g., 'Verkehr' instead of 'traffic')\n";
+              responseText += "- Using `get_facets` to discover which tags/organizations are relevant\n";
             } else {
-              responseText += `Found ${totalUnique} relevant dataset(s)`;
-              if (searchTerms.length > 1) {
-                responseText += ` (searched: ${searchTerms.join(', ')})`;
-              }
-              if (totalUnique > combinedResults.length) {
-                responseText += ` (showing top ${combinedResults.length})`;
+              responseText += `Found ${result.count} dataset(s)`;
+              if (result.count > result.results.length) {
+                responseText += ` (showing top ${result.results.length})`;
               }
               responseText += `:\n\n`;
 
-              combinedResults.forEach((dataset, index) => {
+              result.results.forEach((dataset, index) => {
                 responseText += `## ${index + 1}. ${dataset.title}\n`;
                 responseText += `**ID**: ${dataset.name}\n`;
                 responseText += `**URL**: https://daten.berlin.de/datensaetze/${dataset.name}\n`;
@@ -397,43 +335,32 @@ export class BerlinOpenDataMCPServer {
 
                 if (dataset.notes && dataset.notes.length > 0) {
                   const description = dataset.notes.length > 200
-                    ? dataset.notes.substring(0, 200) + '...'
+                    ? dataset.notes.substring(0, 200) + '…'
                     : dataset.notes;
                   responseText += `**Description**: ${description}\n`;
                 }
 
                 if (dataset.resources && dataset.resources.length > 0) {
-                  responseText += `**Resources**: ${dataset.resources.length} files available`;
                   const formats = [...new Set(dataset.resources.map((r: any) => r.format).filter(Boolean))];
-                  if (formats.length > 0) {
-                    responseText += ` (${formats.join(', ')})`;
-                  }
-                  responseText += '\n';
+                  responseText += `**Resources**: ${dataset.resources.length} file(s)${formats.length ? ` (${formats.join(', ')})` : ''}\n`;
                 }
 
                 if (dataset.tags && dataset.tags.length > 0) {
                   responseText += `**Tags**: ${dataset.tags.slice(0, 5).map((t: any) => t.name).join(', ')}`;
-                  if (dataset.tags.length > 5) {
-                    responseText += ` +${dataset.tags.length - 5} more`;
-                  }
+                  if (dataset.tags.length > 5) responseText += ` +${dataset.tags.length - 5} more`;
                   responseText += '\n';
                 }
 
                 responseText += '\n';
               });
 
-              responseText += `\n💡 **Next steps**:\n`;
-              responseText += `- Use \`get_dataset_details\` with any dataset ID to get full details\n`;
+              responseText += `\n**Next steps**:\n`;
+              responseText += `- Use \`get_dataset_details\` with any dataset ID for full details and resource URLs\n`;
+              responseText += `- Use \`get_facets\` with your query to discover organizations/tags for precise filtering\n`;
+              responseText += `- Use \`search_datasets_filtered\` with organization/tag/format/date filters\n`;
             }
 
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: responseText,
-                },
-              ],
-            };
+            return { content: [{ type: 'text', text: responseText }] };
           }
 
           case 'get_dataset_details': {
@@ -1095,6 +1022,159 @@ export class BerlinOpenDataMCPServer {
             return {
               content: [{ type: 'text', text: responseText }],
             };
+          }
+
+          case 'search_datasets_filtered': {
+            const {
+              query = '*',
+              organization,
+              tag,
+              format,
+              modified_since,
+              sort = 'score desc, metadata_modified desc',
+              rows = 20,
+            } = args as {
+              query?: string;
+              organization?: string;
+              tag?: string;
+              format?: string;
+              modified_since?: string;
+              sort?: string;
+              rows?: number;
+            };
+
+            const result = await this.api.searchDatasetsFiltered({
+              query,
+              organization,
+              tag,
+              format,
+              modified_since,
+              sort,
+              limit: rows,
+            });
+
+            let responseText = `# Filtered Search: "${query}"\n\n`;
+
+            const activeFilters: string[] = [];
+            if (organization) activeFilters.push(`organization: ${organization}`);
+            if (tag) activeFilters.push(`tag: ${tag}`);
+            if (format) activeFilters.push(`format: ${format}`);
+            if (modified_since) activeFilters.push(`modified since: ${modified_since}`);
+            if (activeFilters.length > 0) {
+              responseText += `**Active filters**: ${activeFilters.join(' · ')}\n`;
+            }
+            responseText += `**Total matches**: ${result.count}`;
+            if (result.count > rows) {
+              responseText += ` (showing ${rows})`;
+            }
+            responseText += '\n\n';
+
+            if (result.results.length === 0) {
+              responseText += 'No datasets found. Try broadening your filters or query.\n';
+            } else {
+              result.results.forEach((dataset, index) => {
+                responseText += `## ${index + 1}. ${dataset.title}\n`;
+                responseText += `**ID**: ${dataset.name}\n`;
+                responseText += `**Organization**: ${dataset.organization?.title || 'Unknown'}\n`;
+                if (dataset.metadata_modified) {
+                  responseText += `**Last updated**: ${new Date(dataset.metadata_modified).toLocaleDateString('de-DE')}\n`;
+                }
+                if (dataset.notes) {
+                  const desc = dataset.notes.length > 200 ? dataset.notes.substring(0, 200) + '…' : dataset.notes;
+                  responseText += `**Description**: ${desc}\n`;
+                }
+                if (dataset.resources?.length > 0) {
+                  const formats = [...new Set(dataset.resources.map((r: any) => r.format).filter(Boolean))];
+                  responseText += `**Resources**: ${dataset.resources.length} file(s) (${formats.join(', ')})\n`;
+                }
+                if (dataset.tags?.length > 0) {
+                  responseText += `**Tags**: ${dataset.tags.slice(0, 5).map((t: any) => t.name).join(', ')}\n`;
+                }
+                responseText += '\n';
+              });
+            }
+
+            if (result.facets && Object.keys(result.facets).length > 0) {
+              responseText += `## Facets (refine with search_datasets_filtered)\n\n`;
+
+              if (result.facets.organization?.length) {
+                responseText += `**Organizations**: ${result.facets.organization.map(f => `${f.display_name} (${f.count})`).join(', ')}\n`;
+              }
+              if (result.facets.tags?.length) {
+                responseText += `**Tags**: ${result.facets.tags.map(f => `${f.name} (${f.count})`).join(', ')}\n`;
+              }
+              if (result.facets.res_format?.length) {
+                responseText += `**Formats**: ${result.facets.res_format.map(f => `${f.name} (${f.count})`).join(', ')}\n`;
+              }
+            }
+
+            return { content: [{ type: 'text', text: responseText }] };
+          }
+
+          case 'get_facets': {
+            const { query = '*', limit = 10 } = args as { query?: string; limit?: number };
+
+            const facets = await this.api.getFacets(
+              query,
+              ['tags', 'organization', 'res_format', 'groups'],
+              limit,
+            );
+
+            let responseText = `# Facets for "${query}"\n\n`;
+            responseText += `Use these values with \`search_datasets_filtered\` to narrow your search.\n\n`;
+
+            if (facets.organization?.length) {
+              responseText += `## Organizations\n`;
+              facets.organization.forEach(f => {
+                responseText += `- \`${f.name}\` — ${f.display_name} (${f.count} datasets)\n`;
+              });
+              responseText += '\n';
+            }
+
+            if (facets.tags?.length) {
+              responseText += `## Tags\n`;
+              facets.tags.forEach(f => {
+                responseText += `- \`${f.name}\` (${f.count} datasets)\n`;
+              });
+              responseText += '\n';
+            }
+
+            if (facets.res_format?.length) {
+              responseText += `## Formats\n`;
+              facets.res_format.forEach(f => {
+                responseText += `- \`${f.name}\` (${f.count} datasets)\n`;
+              });
+              responseText += '\n';
+            }
+
+            if (facets.groups?.length) {
+              responseText += `## Groups\n`;
+              facets.groups.forEach(f => {
+                responseText += `- \`${f.name}\` — ${f.display_name} (${f.count} datasets)\n`;
+              });
+              responseText += '\n';
+            }
+
+            return { content: [{ type: 'text', text: responseText }] };
+          }
+
+          case 'list_tags': {
+            const { query, limit = 50 } = args as { query?: string; limit?: number };
+
+            const tags = await this.api.listTags(limit, query);
+
+            let responseText = query
+              ? `# Tags matching "${query}"\n\n`
+              : `# Available Tags (first ${limit})\n\n`;
+
+            if (tags.length === 0) {
+              responseText += 'No tags found.\n';
+            } else {
+              responseText += tags.map(t => `- \`${t.name}\``).join('\n');
+              responseText += `\n\n${tags.length} tag(s) returned. Use these values in \`search_datasets_filtered\` as the \`tag\` parameter.\n`;
+            }
+
+            return { content: [{ type: 'text', text: responseText }] };
           }
 
           default:

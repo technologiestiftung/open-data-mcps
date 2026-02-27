@@ -10,7 +10,7 @@
     "start:http": "node dist/http-server.js",
     "dev": "tsx src/index.ts",
     "dev:http": "tsx src/http-server.ts",
-    "generate-expansions": "tsx scripts/generate-query-expansion.ts"
+    "dev:browser": "tsx src/browser-fetcher.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",

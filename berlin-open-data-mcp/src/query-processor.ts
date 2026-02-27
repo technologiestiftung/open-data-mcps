@@ -1,163 +1,125 @@
-// ABOUTME: Processes natural language queries into structured search parameters
-// ABOUTME: Maps English and German keywords to relevant dataset tags and categories
-
-import { DatasetSearchParams } from './types.js';
-import { QUERY_EXPANSION } from './generated-expansions.js';
+// ABOUTME: Processes natural language queries into Solr-compatible OR queries
+// ABOUTME: Bridges user vocabulary (English, informal German) to portal dataset terms
 
 export class QueryProcessor {
-  // Manual seed mappings: common user search terms → portal-native terms
-  // These handle terms users search for that don't appear in portal metadata
+  /**
+   * Manually curated synonym pairs. These bridge known vocabulary gaps between
+   * how users search and how Berlin datasets are actually tagged/titled.
+   * Add entries here when a query that should work returns 0 results.
+   * These don't go stale — they're about stable conceptual mappings, not
+   * the transient vocabulary of individual datasets.
+   */
   private readonly SEED_MAPPINGS: Record<string, string[]> = {
-    // User searches "miete" but portal uses "Mietspiegel"
-    "miete": ["mietspiegel"],
+    // Cycling / transport
+    'rad':          ['fahrrad', 'radverkehr'],
+    'fahrrad':      ['radverkehr'],
+    'radverkehr':   ['fahrrad'],
+    'cycling':      ['fahrrad', 'radverkehr'],
+    'bicycle':      ['fahrrad', 'radverkehr'],
+    'auto':         ['kfz', 'pkw'],
+    'car':          ['kfz', 'pkw', 'auto'],
+    'traffic':      ['verkehr'],
+    'bahn':         ['s-bahn', 'u-bahn', 'straßenbahn'],
 
-    // User searches "wohnung" but portal uses "wohnen", "wohnraum", etc.
-    "wohnung": ["wohnen", "wohn"],
+    // Population / demographics
+    'bevölkerung':      ['einwohner', 'einwohnerinnen'],
+    'bevölkerungszahl': ['einwohner', 'einwohnerinnen'],
+    'einwohner':        ['einwohnerinnen', 'bevölkerung'],
+    'population':       ['einwohner', 'einwohnerinnen', 'bevölkerung'],
+    'demographics':     ['einwohner', 'bevölkerung', 'demografie'],
 
-    // User searches "bevölkerung" but portal uses "einwohner"
-    "bevölkerung": ["einwohner"],
+    // Housing / rent
+    'miete':        ['mietspiegel', 'mietpreise'],
+    'rent':         ['miete', 'mietspiegel'],
+    'wohnung':      ['wohnen', 'wohnraum'],
+    'immobilie':    ['wohnen', 'wohnraum'],
+    'housing':      ['wohnen', 'wohnraum', 'miete'],
+    'apartment':    ['wohnen', 'wohnraum'],
 
-    // Additional common user terms
-    "immobilie": ["wohnen", "wohn"],
-    "rad": ["fahrrad"],
-    "auto": ["kfz"],
-    "windkraft": ["windkraftanlagen", "stromeinspeisung"]
+    // Environment / air
+    'luftqualität': ['luftschadstoff', 'luftbelastung'],
+    'luft':         ['luftqualität', 'luftschadstoff'],
+    'air':          ['luft', 'luftqualität', 'luftschadstoff'],
+    'pollution':    ['luftschadstoff', 'luftbelastung', 'umwelt'],
+    'lärm':         ['lärmschutz', 'lärmbelastung'],
+    'noise':        ['lärm', 'lärmbelastung'],
+
+    // Energy
+    'windkraft':    ['windkraftanlagen', 'stromeinspeisung'],
+    'energie':      ['strom', 'energieerzeugung'],
+    'energy':       ['energie', 'strom', 'energieerzeugung'],
+    'solar':        ['solaranlagen', 'photovoltaik'],
+    'strom':        ['energie', 'energieerzeugung'],
+
+    // Water / nature
+    'wasser':       ['gewässer', 'grundwasser'],
+    'water':        ['wasser', 'gewässer'],
+    'baum':         ['bäume', 'straßenbäume'],
+    'bäume':        ['straßenbäume', 'baum'],
+    'trees':        ['bäume', 'straßenbäume'],
+    'grün':         ['grünflächen', 'parks', 'vegetation'],
+    'park':         ['grünflächen', 'parks'],
+
+    // Waste
+    'müll':         ['abfall', 'entsorgung'],
+    'abfall':       ['müll', 'entsorgung'],
+    'waste':        ['abfall', 'müll', 'entsorgung'],
+
+    // Social / welfare
+    'schule':       ['schulen', 'bildung'],
+    'school':       ['schule', 'schulen', 'bildung'],
+    'sozial':       ['sozialhilfe', 'sozialleistungen'],
+    'health':       ['gesundheit'],
+    'gesundheit':   ['krankenhaus', 'arzt'],
+    'crime':        ['kriminalität', 'straftaten'],
+    'kriminalität': ['straftaten', 'polizei'],
+
+    // Public transport
+    'öpnv':         ['nahverkehr', 's-bahn', 'u-bahn', 'bus'],
+    'nahverkehr':   ['öpnv', 's-bahn', 'u-bahn'],
+    'publictransport': ['öpnv', 'nahverkehr'],
   };
 
-  // Combined expansion map: merges seed mappings with generated expansions
-  private readonly QUERY_EXPANSION: Record<string, string[]>;
+  private readonly STOP_WORDS = new Set([
+    // English
+    'find', 'search', 'show', 'me', 'list', 'all', 'datasets', 'dataset',
+    'about', 'in', 'for', 'the', 'and', 'of', 'to', 'is', 'are', 'with',
+    // German
+    'was', 'ist', 'sind', 'hat', 'haben', 'kann', 'können', 'wird', 'werden',
+    'der', 'die', 'das', 'den', 'dem', 'des', 'ein', 'eine', 'einer', 'eines',
+    'einem', 'von', 'vom', 'zu', 'zum', 'zur', 'bei', 'mit', 'auf', 'aus',
+    'nach', 'vor', 'über', 'unter', 'zwischen', 'durch', 'gegen', 'ohne', 'um',
+    'wie', 'wo', 'wer', 'was', 'welche', 'welcher', 'welches',
+  ]);
 
-  constructor() {
-    // Merge seed mappings with generated expansions
-    this.QUERY_EXPANSION = { ...QUERY_EXPANSION };
+  /**
+   * Converts a natural language user query into an OR-joined Solr query.
+   * Each token is expanded with synonyms from SEED_MAPPINGS, then all terms
+   * are joined with explicit OR so that any matching term returns results.
+   * This replaces the old N-parallel-API-calls fan-out with a single request.
+   *
+   * "bicycle infrastructure" → "(bicycle OR fahrrad OR radverkehr OR infrastructure)"
+   * "Einwohner 2024"         → "(einwohner OR einwohnerinnen OR bevölkerung OR 2024)"
+   */
+  buildQuery(userQuery: string): string {
+    const tokens = userQuery
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(t => t.length >= 2 && !this.STOP_WORDS.has(t));
 
-    // Expand seed mappings recursively
-    for (const [userTerm, portalTerms] of Object.entries(this.SEED_MAPPINGS)) {
-      const expandedTerms = new Set<string>();
+    if (tokens.length === 0) return userQuery;
 
-      for (const portalTerm of portalTerms) {
-        const lowerPortalTerm = portalTerm.toLowerCase();
+    const expanded = tokens.flatMap(token => [
+      token,
+      ...(this.SEED_MAPPINGS[token] || []),
+    ]);
 
-        // Check if portal term has expansions in generated map
-        if (QUERY_EXPANSION[lowerPortalTerm]) {
-          // Add all expanded terms
-          QUERY_EXPANSION[lowerPortalTerm].forEach(t => expandedTerms.add(t));
-        } else {
-          // No expansion available, use portal term directly (capitalized)
-          expandedTerms.add(portalTerm.charAt(0).toUpperCase() + portalTerm.slice(1));
-        }
-      }
+    const deduplicated = [...new Set(expanded)];
 
-      // Store the combined expansion for the user term
-      this.QUERY_EXPANSION[userTerm] = Array.from(expandedTerms);
-    }
-  }
+    if (deduplicated.length === 1) return deduplicated[0];
 
-  processQuery(naturalLanguageQuery: string): DatasetSearchParams {
-    // Clean up noise words using word boundaries to avoid partial matches
-    const cleanQuery = naturalLanguageQuery
-      .replace(/\b(find|search|show|me|list|all|datasets?|about|in|for|the|and)\b/gi, '')
-      .trim()
-      .replace(/\s+/g, ' '); // Normalize whitespace
-
-    // Use cleaned query directly
-    const searchQuery = cleanQuery || naturalLanguageQuery;
-
-    // Build search parameters
-    const searchParams: DatasetSearchParams = {
-      query: searchQuery,
-      limit: 20
-    };
-
-    return searchParams;
-  }
-
-  extractSearchTerms(naturalLanguageQuery: string): string[] {
-    // Clean up noise words using word boundaries to avoid partial matches
-    // CRITICAL: Use \b to match whole words only, not substrings
-    // Without \b: "housing" → "housg" (because "in" matches inside "housing")
-    // With \b: "housing" → "housing" ✓
-    const cleanQuery = naturalLanguageQuery
-      .replace(/\b(find|search|show|me|list|all|datasets?|about|in|for|the|and|was|ist|sind|hat|haben|kann|können|wird|werden|der|die|das|den|dem|des|ein|eine|einer|eines|einem|von|vom|zu|zum|zur|bei|mit|auf|aus|nach|vor|über|unter|zwischen|durch|gegen|ohne|um)\b/gi, '')
-      .trim()
-      .replace(/\s+/g, ' '); // Normalize whitespace
-
-    // Split into significant words (3+ characters to avoid noise)
-    const words = cleanQuery.split(/\s+/).filter(w => w.length >= 3);
-
-    if (words.length === 0) {
-      return [cleanQuery || naturalLanguageQuery];
-    }
-
-    // CRITICAL: Berlin's CKAN instance does NOT support wildcards or stemming
-    // SOLUTION: Query expansion map
-    // Maps common search terms → actual terms that exist in portal datasets
-    //
-    // Example: User searches "miete"
-    //   Without expansion: "miete" → 0 results ❌
-    //   With expansion: ["Mietspiegel", "Mietpreis"] → 39 results ✓
-
-    const expandedTerms: string[] = [];
-
-    for (const word of words) {
-      const lowerWord = word.toLowerCase();
-
-      // Check if this word has an expansion mapping
-      if (this.QUERY_EXPANSION[lowerWord]) {
-        // Use expanded terms (verified to work in portal)
-        expandedTerms.push(...this.QUERY_EXPANSION[lowerWord]);
-      } else {
-        // No expansion available, use original word
-        expandedTerms.push(word);
-      }
-    }
-
-    // Remove duplicates while preserving order
-    return [...new Set(expandedTerms)];
-  }
-
-  extractIntent(query: string): 'search' | 'list' | 'specific' {
-    const lowerQuery = query.toLowerCase();
-
-    if (lowerQuery.includes('find') || lowerQuery.includes('search') || lowerQuery.includes('show me')) {
-      return 'search';
-    }
-
-    if (lowerQuery.includes('list') || lowerQuery.includes('all datasets')) {
-      return 'list';
-    }
-
-    return 'search'; // Default to search
-  }
-
-  generateSummary(results: any[], originalQuery: string): string {
-    if (results.length === 0) {
-      return `No datasets found for "${originalQuery}". Try refining your search terms.`;
-    }
-
-    const categories = new Set<string>();
-    const formats = new Set<string>();
-
-    results.forEach(dataset => {
-      dataset.tags?.forEach((tag: any) => categories.add(tag.name));
-      dataset.resources?.forEach((resource: any) => formats.add(resource.format));
-    });
-
-    let summary = `Found ${results.length} dataset(s) related to "${originalQuery}":\n\n`;
-
-    results.slice(0, 5).forEach((dataset, index) => {
-      summary += `${index + 1}. **${dataset.title}**\n`;
-      summary += `   ${dataset.notes?.substring(0, 100)}${dataset.notes?.length > 100 ? '...' : ''}\n`;
-      summary += `   Formats: ${dataset.resources?.map((r: any) => r.format).join(', ') || 'N/A'}\n\n`;
-    });
-
-    if (results.length > 5) {
-      summary += `... and ${results.length - 5} more datasets.\n\n`;
-    }
-
-    summary += `**Categories found:** ${Array.from(categories).slice(0, 10).join(', ')}\n`;
-    summary += `**Available formats:** ${Array.from(formats).slice(0, 10).join(', ')}`;
-
-    return summary;
+    // Wrap in parentheses — confirmed working on datenregister.berlin.de.
+    // Plain space-separated terms trigger q.op=AND; explicit OR in parentheses bypasses it.
+    return `(${deduplicated.join(' OR ')})`;
   }
 }
