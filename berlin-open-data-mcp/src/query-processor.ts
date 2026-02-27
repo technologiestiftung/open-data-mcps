@@ -26,14 +26,21 @@ export class QueryProcessor {
     'radweg':               ['radverkehrsanlagen', 'radverkehr'],
 
     // Population / demographics
-    'bevölkerung':      ['einwohner', 'einwohnerinnen'],
-    'bevölkerungszahl': ['einwohner', 'einwohnerinnen'],
-    'einwohner':        ['einwohnerinnen', 'bevölkerung'],
-    'population':       ['einwohner', 'einwohnerinnen', 'bevölkerung'],
-    'demographics':     ['einwohner', 'bevölkerung', 'demografie'],
+    'bevölkerung':          ['einwohner', 'einwohnerinnen'],
+    'bevölkerungszahl':     ['einwohner', 'einwohnerinnen', 'bevölkerungsstand'],
+    'bevölkerungsstand':    ['einwohner', 'einwohnerinnen', 'bevölkerung'],
+    'bevölkerungsstatistik':['einwohner', 'einwohnerinnen', 'bevölkerung', 'statistik'],
+    'einwohner':            ['einwohnerinnen', 'bevölkerung', 'bevölkerungsstand'],
+    'einwohnerzahl':        ['einwohner', 'einwohnerinnen', 'bevölkerung', 'bevölkerungsstand'],
+    'einwohnerzahlen':      ['einwohner', 'einwohnerinnen', 'bevölkerung', 'bevölkerungsstand'],
+    'einwohnerstatistik':   ['einwohner', 'einwohnerinnen', 'bevölkerung', 'statistik'],
+    'einwohnerdichte':      ['einwohner', 'einwohnerinnen', 'bevölkerung', 'dichte'],
+    'population':           ['einwohner', 'einwohnerinnen', 'bevölkerung'],
+    'demographics':         ['einwohner', 'bevölkerung', 'demografie'],
 
-    // Districts / LOR
-    'bezirk': ['lor', 'planungsraum', 'bezirksregion'],
+    // Districts
+    'bezirk': ['bezirksregion'],
+    'district': ['bezirk', 'bezirksregion'],
     'lor': ['planungsraum', 'bezirksregion', 'lor-planungsräume'],
 
     // Housing / rent
@@ -99,6 +106,7 @@ export class QueryProcessor {
     'nach', 'vor', 'über', 'unter', 'zwischen', 'durch', 'gegen', 'ohne', 'um',
     'wie', 'wo', 'wer', 'was', 'welche', 'welcher', 'welches',
     'berlin', 'anzahl', 'gibt', 'viele', 'wie', 'es', 'sind', 'wieviele', 'zahl',
+    'pro', 'je', 'per',
   ]);
 
   /**

@@ -35,6 +35,16 @@ describe('full pipeline: natural language → buildQuery → searchDatasets', ()
     expect(found, `Expected population datasets. Got: ${titles.slice(0, 5).join(', ')}`).toBe(true);
   }, 15_000);
 
+  it('"wie viele einwohner hat berlin pro bezirk" surfaces population-by-district datasets', async () => {
+    const result = await search('wie viele einwohner hat berlin pro bezirk');
+    expect(result.count).toBeGreaterThan(0);
+    const titles = result.results.map(d => d.title.toLowerCase());
+    const found = titles.some(t =>
+      t.includes('einwohner') || t.includes('bevölkerung') || t.includes('bezirk')
+    );
+    expect(found, `Expected population/district datasets. Got: ${titles.slice(0, 5).join(', ')}`).toBe(true);
+  }, 15_000);
+
   it('"Miete" surfaces Mietspiegel datasets via SEED_MAPPINGS', async () => {
     const result = await search('Miete');
     const titles = result.results.map(d => d.title.toLowerCase());

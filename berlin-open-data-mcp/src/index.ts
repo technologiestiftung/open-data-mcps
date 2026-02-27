@@ -70,7 +70,7 @@ export class BerlinOpenDataMCPServer {
               },
               sort: {
                 type: 'string',
-                description: 'Sort order. Default: "score desc, metadata_modified desc" (relevance first, then recency). Use "metadata_modified desc" for newest-first.',
+                description: 'Sort order. Default: "score desc, metadata_modified desc" (relevance first, then recency). WARNING: "metadata_modified desc" alone is dominated by frequently-harvested WMS/WFS layers. To find the most recent statistical data, use search_datasets_filtered with an organization filter AND sort="metadata_modified desc".',
               },
             },
             required: ['query'],
@@ -282,6 +282,19 @@ export class BerlinOpenDataMCPServer {
                 responseText += `**URL**: https://daten.berlin.de/datensaetze/${dataset.name}\n`;
                 responseText += `**Organization**: ${dataset.organization?.title || 'Unknown'}\n`;
 
+                // Extract data reference period from title (e.g. "am 31.12.2024", "2022", "2023/2024")
+                const datePeriodMatch = dataset.title.match(
+                  /(?:am\s+\d{1,2}\.\d{1,2}\.(\d{4})|(\d{4})\/(\d{4})|(?:^|\s)(\d{4})(?:\s|$))/
+                );
+                if (datePeriodMatch) {
+                  const year = datePeriodMatch[1] || datePeriodMatch[3] || datePeriodMatch[4];
+                  if (year) responseText += `**Data period**: ${year}\n`;
+                }
+
+                if (dataset.metadata_modified) {
+                  responseText += `**Catalog entry updated**: ${new Date(dataset.metadata_modified).toLocaleDateString('de-DE')}\n`;
+                }
+
                 if (dataset.notes && dataset.notes.length > 0) {
                   const description = dataset.notes.length > 200
                     ? dataset.notes.substring(0, 200) + '…'
@@ -303,10 +316,22 @@ export class BerlinOpenDataMCPServer {
                 responseText += '\n';
               });
 
+              responseText += `\n> **Note**: "Catalog entry updated" is the date the portal record was last edited — it does NOT reflect data currency. The actual reference period is in the dataset title (e.g. "am 31.12.2024") or the "Data period" field above.\n`;
+
+              // Render top organizations from facets so the model has slugs ready to use
+              if (result.facets?.organization?.length) {
+                responseText += `\n**Organizations with matching datasets**:\n`;
+                result.facets.organization.slice(0, 5).forEach((f: any) => {
+                  responseText += `- \`${f.name}\` — ${f.display_name} (${f.count} datasets)\n`;
+                });
+                const topOrg = result.facets.organization[0];
+                responseText += `\n**→ To get the most recent data**: call \`search_datasets_filtered\` with \`organization="${topOrg.name}"\` and \`sort="metadata_modified desc"\`\n`;
+              }
+
               responseText += `\n**Next steps**:\n`;
               responseText += `- Use \`get_dataset_details\` with any dataset ID for full details and resource URLs\n`;
-              responseText += `- Use \`get_facets\` with your query to discover organizations/tags for precise filtering\n`;
-              responseText += `- Use \`search_datasets_filtered\` with organization/tag/format/date filters\n`;
+              responseText += `- Use \`search_datasets_filtered\` with \`organization\`, \`tag\`, \`format\`, or \`modified_since\` filters\n`;
+              responseText += `- Use \`search_datasets_filtered\` with \`sort="metadata_modified desc"\` to surface the newest catalog entries first\n`;
             }
 
             return { content: [{ type: 'text', text: responseText }] };
@@ -951,8 +976,10 @@ export class BerlinOpenDataMCPServer {
               rows?: number;
             };
 
+            const processedQuery = query !== '*' ? this.queryProcessor.buildQuery(query) : query;
+
             const result = await this.api.searchDatasetsFiltered({
-              query,
+              query: processedQuery,
               organization,
               tag,
               format,
@@ -984,8 +1011,17 @@ export class BerlinOpenDataMCPServer {
                 responseText += `## ${index + 1}. ${dataset.title}\n`;
                 responseText += `**ID**: ${dataset.name}\n`;
                 responseText += `**Organization**: ${dataset.organization?.title || 'Unknown'}\n`;
+
+                const datePeriodMatch = dataset.title.match(
+                  /(?:am\s+\d{1,2}\.\d{1,2}\.(\d{4})|(\d{4})\/(\d{4})|(?:^|\s)(\d{4})(?:\s|$))/
+                );
+                if (datePeriodMatch) {
+                  const year = datePeriodMatch[1] || datePeriodMatch[3] || datePeriodMatch[4];
+                  if (year) responseText += `**Data period**: ${year}\n`;
+                }
+
                 if (dataset.metadata_modified) {
-                  responseText += `**Last updated**: ${new Date(dataset.metadata_modified).toLocaleDateString('de-DE')}\n`;
+                  responseText += `**Catalog entry updated**: ${new Date(dataset.metadata_modified).toLocaleDateString('de-DE')}\n`;
                 }
                 if (dataset.notes) {
                   const desc = dataset.notes.length > 200 ? dataset.notes.substring(0, 200) + '…' : dataset.notes;
@@ -1000,10 +1036,11 @@ export class BerlinOpenDataMCPServer {
                 }
                 responseText += '\n';
               });
+              responseText += `\n> **Note**: "Catalog entry updated" is when the portal record was last edited — NOT data currency. The actual reference period is usually in the dataset title (e.g. "am 31.12.2024").\n`;
             }
 
             if (result.facets && Object.keys(result.facets).length > 0) {
-              responseText += `## Facets (refine with search_datasets_filtered)\n\n`;
+              responseText += `\n## Facets (refine with search_datasets_filtered)\n\n`;
 
               if (result.facets.organization?.length) {
                 responseText += `**Organizations**: ${result.facets.organization.map(f => `${f.display_name} (${f.count})`).join(', ')}\n`;
