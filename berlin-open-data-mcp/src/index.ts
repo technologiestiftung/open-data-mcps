@@ -549,6 +549,9 @@ export class BerlinOpenDataMCPServer {
                 enrichedRows = fetchedData.rows.map(row => this.lorLookup.enrichRow(row));
               }
 
+              // Geometry columns — useful for map rendering but bloat LLM context
+              const GEOMETRY_COLS = new Set(['geometry_coordinates', 'geometry_type', 'geometry']);
+
               const displayColumns = enrichedRows.length > 0 ? Object.keys(enrichedRows[0]) : fetchedData.columns;
               const sampledNote = isSampled && !full_data
                 ? ` *(showing ${enrichedRows.length} of ${totalRows} — use \`full_data: true\` to fetch all)*`
@@ -566,9 +569,44 @@ export class BerlinOpenDataMCPServer {
               responseText += `## Preview (first 3 rows)\n\n`;
               responseText += `\`\`\`json\n${JSON.stringify(preview, null, 2)}\n\`\`\`\n\n`;
 
-              // Full data block — stripped by interface-prototype before sending to the LLM,
-              // kept here so the interface can cache it for its own analysis features.
-              responseText += `\`\`\`json\n${JSON.stringify(enrichedRows)}\n\`\`\`\n`;
+              // For datasets with many rows, add value distributions for categorical columns so
+              // the LLM can answer aggregation questions without needing the full row list.
+              const attributeRows = enrichedRows.map(row => {
+                const r: any = {};
+                for (const [k, v] of Object.entries(row)) {
+                  if (!GEOMETRY_COLS.has(k)) r[k] = v;
+                }
+                return r;
+              });
+
+              if (attributeRows.length > 10) {
+                const attrCols = attributeRows.length > 0 ? Object.keys(attributeRows[0]) : [];
+                const distributions: Record<string, Record<string, number>> = {};
+                for (const col of attrCols) {
+                  const counts: Record<string, number> = {};
+                  let uniqueOverflow = false;
+                  for (const row of attributeRows) {
+                    const val = String(row[col] ?? '');
+                    counts[val] = (counts[val] ?? 0) + 1;
+                    if (Object.keys(counts).length > 50) { uniqueOverflow = true; break; }
+                  }
+                  if (!uniqueOverflow) distributions[col] = counts;
+                }
+                if (Object.keys(distributions).length > 0) {
+                  responseText += `## Column value distributions\n\n`;
+                  responseText += `\`\`\`json\n${JSON.stringify(distributions, null, 2)}\n\`\`\`\n\n`;
+                }
+              }
+
+              // Attribute-only data block (no geometry) — for LLM analysis of the full dataset.
+              // Capped at 200 rows to stay within context limits; use the download tool for the full set.
+              const LLM_ROW_CAP = 200;
+              const llmRows = attributeRows.slice(0, LLM_ROW_CAP);
+              const llmCapNote = attributeRows.length > LLM_ROW_CAP
+                ? ` (first ${LLM_ROW_CAP} of ${attributeRows.length} rows; geometry columns excluded)`
+                : ' (geometry columns excluded)';
+              responseText += `## All attribute data${llmCapNote}\n\n`;
+              responseText += `\`\`\`json\n${JSON.stringify(llmRows)}\n\`\`\`\n\n`;
 
               return {
                 content: [{ type: 'text', text: responseText }],
