@@ -16,35 +16,7 @@ import { DataFetcher } from './data-fetcher.js';
 import { DataSampler } from './data-sampler.js';
 import { GeoJSONTransformer } from './geojson-transformer.js';
 import { LORLookupService } from './lor-lookup.js';
-import { CodeExecutor } from './code-executor.js';
-
-// Global cache for datasets - works across sessions (Claude.ai doesn't maintain sessions)
-// This is safe because Berlin Open Data is public data
-interface CachedDataset {
-  data: any[];
-  timestamp: number;
-}
-const globalDatasetCache = new Map<string, CachedDataset>();
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-
-function getFromGlobalCache(datasetId: string): any[] | undefined {
-  const cached = globalDatasetCache.get(datasetId);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.data;
-  }
-  if (cached) {
-    globalDatasetCache.delete(datasetId); // Expired
-  }
-  return undefined;
-}
-
-function setInGlobalCache(datasetId: string, data: any[]): void {
-  globalDatasetCache.set(datasetId, { data, timestamp: Date.now() });
-}
-
-export interface BerlinOpenDataMCPServerOptions {
-  sessionCache?: Map<string, any[]>;
-}
+export interface BerlinOpenDataMCPServerOptions {}
 
 export class BerlinOpenDataMCPServer {
   private server: Server;
@@ -54,12 +26,7 @@ export class BerlinOpenDataMCPServer {
   private dataSampler: DataSampler;
   private geoJSONTransformer: GeoJSONTransformer;
   private lorLookup: LORLookupService;
-  private codeExecutor: CodeExecutor;
-  private sessionCache: Map<string, any[]>;
-
   constructor(options: BerlinOpenDataMCPServerOptions = {}) {
-    this.sessionCache = options.sessionCache || new Map();
-    this.codeExecutor = new CodeExecutor();
     this.server = new Server(
       {
         name: 'berlin-opendata-server',
@@ -271,24 +238,6 @@ export class BerlinOpenDataMCPServer {
               },
             },
             required: ['dataset_id'],
-          },
-        },
-        {
-          name: 'execute_code',
-          description: 'REQUIRED for data analysis. After fetch_dataset_data caches data, use this tool to perform calculations, aggregations, filtering, or transformations. Do NOT try to download files directly or write local scripts - use this tool instead. The full dataset is available as the `data` variable.',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              code: {
-                type: 'string',
-                description: 'JavaScript code to execute. The dataset is available as `data` (array of row objects). Return the result as the last expression. Example: `data.reduce((acc, r) => { acc[r.BEZIRK_NAME] = (acc[r.BEZIRK_NAME] || 0) + parseInt(r.E_E); return acc; }, {})`',
-              },
-              dataset_id: {
-                type: 'string',
-                description: 'Dataset ID to use. If not provided, uses the most recently fetched dataset.',
-              },
-            },
-            required: ['code'],
           },
         },
       ],
@@ -573,8 +522,6 @@ export class BerlinOpenDataMCPServer {
               };
             }
 
-            // For small datasets, return preview and instruct to use execute_code
-            // The backend caches full data for execute_code to use
             if (!isLarge) {
               // Enrich data with LOR names if applicable
               const lorInfo = this.lorLookup.hasLORColumns(fetchedData.columns);
@@ -582,53 +529,25 @@ export class BerlinOpenDataMCPServer {
 
               if (this.lorLookup.isLoaded() && (lorInfo.hasBEZ || lorInfo.hasRAUMID)) {
                 enrichedRows = fetchedData.rows.map(row => this.lorLookup.enrichRow(row));
-                console.log('[fetch_dataset_data] Enriched dataset with LOR names');
               }
 
-              // Cache the full data for execute_code (both session and global)
-              this.sessionCache.set(dataset_id, enrichedRows);
-              setInGlobalCache(dataset_id, enrichedRows);
-              console.log(`[fetch_dataset_data] Cached ${enrichedRows.length} rows for dataset ${dataset_id}`);
-
-              responseText += `Dataset has ${totalRows} rows. This is a **${sizeLabel} dataset**.\n\n`;
-
-              // Show enriched columns
               const displayColumns = enrichedRows.length > 0 ? Object.keys(enrichedRows[0]) : fetchedData.columns;
-              responseText += `**Columns (${displayColumns.length}):** ${displayColumns.join(', ')}\n\n`;
+              responseText += `**Rows**: ${totalRows} | **Columns (${displayColumns.length}):** ${displayColumns.join(', ')}\n\n`;
 
-              // Add LOR enrichment note if applicable
               if (this.lorLookup.isLoaded() && (lorInfo.hasBEZ || lorInfo.hasRAUMID)) {
-                responseText += `**📍 LOR Enrichment:** This dataset has been automatically enriched with Berlin administrative district names.\n`;
-                if (lorInfo.hasBEZ) {
-                  responseText += `- \`BEZIRK_NAME\`: Full bezirk name (e.g., "Marzahn-Hellersdorf")\n`;
-                }
-                if (lorInfo.hasRAUMID) {
-                  responseText += `- \`PLANUNGSRAUM_NAME\`, \`BEZIRKSREGION_NAME\`, \`PROGNOSERAUM_NAME\`: Planning area names\n`;
-                }
+                responseText += `**📍 LOR Enrichment:** Automatically enriched with Berlin administrative district names.\n`;
+                if (lorInfo.hasBEZ) responseText += `- \`BEZIRK_NAME\`: Full bezirk name (e.g., "Marzahn-Hellersdorf")\n`;
+                if (lorInfo.hasRAUMID) responseText += `- \`PLANUNGSRAUM_NAME\`, \`BEZIRKSREGION_NAME\`, \`PROGNOSERAUM_NAME\`: Planning area names\n`;
                 responseText += `\n`;
               }
 
-              // Return first 3 rows as preview
               const preview = enrichedRows.slice(0, 3);
               responseText += `## Preview (first 3 rows)\n\n`;
               responseText += `\`\`\`json\n${JSON.stringify(preview, null, 2)}\n\`\`\`\n\n`;
 
-              responseText += `## Data Analysis Available\n\n`;
-              responseText += `**IMPORTANT:** The full dataset (${totalRows} rows) is cached and ready for analysis.\n\n`;
-              responseText += `**To analyze this data, you MUST use the \`execute_code\` tool.**\n`;
-              responseText += `Do NOT download the file or write local scripts - use execute_code instead.\n\n`;
-
-              responseText += `**Example - Sum population per bezirk:**\n`;
-              if (lorInfo.hasBEZ) {
-                responseText += `\`\`\`javascript\ndata.reduce((acc, row) => {\n  acc[row.BEZIRK_NAME] = (acc[row.BEZIRK_NAME] || 0) + parseInt(row.E_E);\n  return acc;\n}, {})\n\`\`\`\n`;
-              } else {
-                const firstCol = displayColumns[0];
-                responseText += `\`\`\`javascript\ndata.reduce((acc, row) => {\n  acc[row["${firstCol}"]] = (acc[row["${firstCol}"]] || 0) + 1;\n  return acc;\n}, {})\n\`\`\`\n`;
-              }
-
-              // Add full data as second JSON block for interface-prototype to cache
-              // This block is stripped by the interface before sending to Claude
-              responseText += `\n\`\`\`json\n${JSON.stringify(enrichedRows)}\n\`\`\`\n`;
+              // Full data block — stripped by interface-prototype before sending to the LLM,
+              // kept here so the interface can cache it for its own analysis features.
+              responseText += `\`\`\`json\n${JSON.stringify(enrichedRows)}\n\`\`\`\n`;
 
               return {
                 content: [{ type: 'text', text: responseText }],
@@ -948,76 +867,6 @@ export class BerlinOpenDataMCPServer {
 
             responseText += `[DOWNLOAD:${filename}:${mimeType}]\n`;
             responseText += fileContent;
-
-            return {
-              content: [{ type: 'text', text: responseText }],
-            };
-          }
-
-          case 'execute_code': {
-            const { code, dataset_id } = args as { code: string; dataset_id?: string };
-
-            // Find cached data - check session cache first, then global cache
-            // (Claude.ai doesn't maintain sessions between tool calls, so we need global fallback)
-            let data: any[] | undefined;
-            let usedDatasetId: string | undefined;
-
-            if (dataset_id) {
-              // Try session cache first, then global cache
-              data = this.sessionCache.get(dataset_id) || getFromGlobalCache(dataset_id);
-              usedDatasetId = dataset_id;
-              if (!data) {
-                return {
-                  content: [{
-                    type: 'text',
-                    text: `❌ No cached data found for dataset "${dataset_id}". Use \`fetch_dataset_data\` first to load the dataset.`,
-                  }],
-                };
-              }
-            } else {
-              // Use most recently cached dataset - check session first, then global
-              let keys = Array.from(this.sessionCache.keys());
-              if (keys.length === 0) {
-                // Fall back to global cache
-                keys = Array.from(globalDatasetCache.keys());
-              }
-              if (keys.length === 0) {
-                return {
-                  content: [{
-                    type: 'text',
-                    text: `❌ No dataset cached. Use \`fetch_dataset_data\` first to load a dataset before running code.`,
-                  }],
-                };
-              }
-              usedDatasetId = keys[keys.length - 1];
-              data = this.sessionCache.get(usedDatasetId) || getFromGlobalCache(usedDatasetId);
-            }
-
-            if (!data || data.length === 0) {
-              return {
-                content: [{
-                  type: 'text',
-                  text: `❌ Cached dataset "${usedDatasetId}" is empty.`,
-                }],
-              };
-            }
-
-            // Execute code with data in context
-            const result = await this.codeExecutor.execute(code, { data });
-
-            if (!result.success) {
-              return {
-                content: [{
-                  type: 'text',
-                  text: `❌ Code execution error: ${result.error}\n\n**Code:**\n\`\`\`javascript\n${code}\n\`\`\``,
-                }],
-              };
-            }
-
-            let responseText = `## Code Execution Result\n\n`;
-            responseText += `**Dataset:** ${usedDatasetId} (${data.length} rows)\n`;
-            responseText += `**Execution time:** ${result.executionTime}ms\n\n`;
-            responseText += `**Result:**\n\`\`\`json\n${JSON.stringify(result.output, null, 2)}\n\`\`\`\n`;
 
             return {
               content: [{ type: 'text', text: responseText }],
