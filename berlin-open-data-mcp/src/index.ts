@@ -196,7 +196,7 @@ export class BerlinOpenDataMCPServer {
         },
         {
           name: 'fetch_dataset_data',
-          description: 'VIEW dataset content in the chat for analysis. Returns a preview plus value distributions for all columns. Supports CSV, JSON, Excel (XLS/XLSX), GeoJSON, KML, and WFS formats. WFS data is automatically converted to tabular format. Does NOT support ZIP archives (provides direct download URL instead). Use when user wants to SEE/ANALYZE data, not download it. Keywords: "zeig mir", "schau dir an", "wie sieht aus", "analysiere". IMPORTANT: For WFS datasets, the default call returns only a 10-row sample. If the response shows "showing X of N — use full_data: true to fetch all", you MUST immediately call again with full_data: true to get column value distributions needed for counting, filtering, or aggregating. Never try to answer aggregation questions (counts, totals, breakdowns) from a 10-row sample.',
+          description: 'VIEW dataset content in the chat for surface-level analysis. Returns a potentially truncated preview plus value distributions for all columns. Supports CSV, JSON, Excel (XLS/XLSX), GeoJSON, KML, and WFS formats. WFS data is automatically converted to tabular format. Does NOT support ZIP archives (provides direct download URL instead). Use when user wants to SEE data shape, not run full aggregations. For robust counts/totals/breakdowns, use `aggregate_dataset`.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -215,6 +215,89 @@ export class BerlinOpenDataMCPServer {
               },
             },
             required: ['dataset_id'],
+          },
+        },
+        {
+          name: 'aggregate_dataset',
+          description: 'Run server-side aggregations on a dataset without sending full rows to the model. Use this for totals, counts, grouped breakdowns, and filtered summaries (e.g. Einwohner sum by BEZIRK_NAME).',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              dataset_id: {
+                type: 'string',
+                description: 'The dataset ID or name',
+              },
+              resource_id: {
+                type: 'string',
+                description: 'Optional: specific resource ID. If not provided, uses first available data resource.',
+              },
+              group_by: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Columns to group by (e.g. ["BEZIRK_NAME"]). Leave empty for overall totals.',
+                default: [],
+              },
+              metrics: {
+                type: 'array',
+                description: 'Aggregation metrics. Example: [{ op: "sum", column: "E_E", as: "einwohner" }]',
+                items: {
+                  type: 'object',
+                  properties: {
+                    op: {
+                      type: 'string',
+                      enum: ['sum', 'avg', 'min', 'max', 'count', 'count_distinct'],
+                    },
+                    column: {
+                      type: 'string',
+                      description: 'Required for all metrics except count.',
+                    },
+                    as: {
+                      type: 'string',
+                      description: 'Optional output field name.',
+                    },
+                  },
+                  required: ['op'],
+                },
+              },
+              filters: {
+                type: 'array',
+                description: 'Optional row filters applied before aggregation.',
+                items: {
+                  type: 'object',
+                  properties: {
+                    column: { type: 'string' },
+                    op: {
+                      type: 'string',
+                      enum: ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'in'],
+                    },
+                    value: {
+                      description: 'Filter value. For op="in", provide an array.',
+                    },
+                  },
+                  required: ['column', 'op', 'value'],
+                },
+                default: [],
+              },
+              sort: {
+                type: 'array',
+                description: 'Optional sorting for aggregated result rows.',
+                items: {
+                  type: 'object',
+                  properties: {
+                    column: { type: 'string' },
+                    direction: { type: 'string', enum: ['asc', 'desc'] },
+                  },
+                  required: ['column'],
+                },
+                default: [],
+              },
+              limit: {
+                type: 'number',
+                description: 'Maximum number of aggregated rows to return (default: 100, max: 1000).',
+                default: 100,
+              },
+            },
+            required: ['dataset_id', 'metrics'],
           },
         },
         {
@@ -626,15 +709,10 @@ export class BerlinOpenDataMCPServer {
                 }
               }
 
-              // Attribute-only data block (no geometry) — for LLM analysis of the full dataset.
-              // Capped at 200 rows to stay within context limits; use the download tool for the full set.
-              const LLM_ROW_CAP = 200;
-              const llmRows = attributeRows.slice(0, LLM_ROW_CAP);
-              const llmCapNote = attributeRows.length > LLM_ROW_CAP
-                ? ` (first ${LLM_ROW_CAP} of ${attributeRows.length} rows; geometry columns excluded)`
-                : ' (geometry columns excluded)';
-              responseText += `## All attribute data${llmCapNote}\n\n`;
-              responseText += `\`\`\`json\n${JSON.stringify(llmRows)}\n\`\`\`\n\n`;
+              // Avoid oversized MCP responses: do not include a large full-row JSON block.
+              // Clients can use download_dataset when they need the complete file payload.
+              responseText += `## Full data access\n\n`;
+              responseText += `For complete row-level data, use \`download_dataset\` (or fetch this resource directly): ${resource.url}\n\n`;
 
               return {
                 content: [{ type: 'text', text: responseText }],
@@ -665,6 +743,236 @@ export class BerlinOpenDataMCPServer {
             responseText += `**Columns (${fetchedData.columns.length}):** ${fetchedData.columns.join(', ')}\n\n`;
             responseText += `**Sample Data (first ${sample.sampleRows.length} rows):**\n`;
             responseText += `\`\`\`json\n${JSON.stringify(sample.sampleRows, null, 2)}\n\`\`\`\n\n`;
+
+            return {
+              content: [{ type: 'text', text: responseText }],
+            };
+          }
+
+          case 'aggregate_dataset': {
+            const {
+              dataset_id,
+              resource_id,
+              group_by = [],
+              metrics,
+              filters = [],
+              sort = [],
+              limit = 100,
+            } = args as {
+              dataset_id: string;
+              resource_id?: string;
+              group_by?: string[];
+              metrics: Array<{ op: 'sum' | 'avg' | 'min' | 'max' | 'count' | 'count_distinct'; column?: string; as?: string }>;
+              filters?: Array<{ column: string; op: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'in'; value: any }>;
+              sort?: Array<{ column: string; direction?: 'asc' | 'desc' }>;
+              limit?: number;
+            };
+
+            if (!dataset_id) {
+              return {
+                content: [{ type: 'text', text: '❌ Missing required parameter: dataset_id.' }],
+              };
+            }
+
+            if (!metrics || metrics.length === 0) {
+              return {
+                content: [{ type: 'text', text: '❌ Missing required parameter: metrics (at least one metric is required).' }],
+              };
+            }
+
+            const dataset = await this.api.getDataset(dataset_id);
+            if (!dataset.resources || dataset.resources.length === 0) {
+              return {
+                content: [{ type: 'text', text: `❌ No resources available for dataset "${dataset_id}".` }],
+              };
+            }
+
+            let resource;
+            if (resource_id) {
+              resource = dataset.resources.find(r => r.id === resource_id);
+              if (!resource) {
+                return {
+                  content: [{ type: 'text', text: `❌ Resource "${resource_id}" not found.` }],
+                };
+              }
+            } else {
+              const dataFormats = ['CSV', 'JSON', 'XLSX', 'XLS', 'XML', 'WMS', 'WFS'];
+              resource = dataset.resources.find(r => dataFormats.includes(r.format?.toUpperCase())) || dataset.resources[0];
+            }
+
+            const formatUpper = resource.format?.toUpperCase() || '';
+            if (formatUpper === 'ZIP' || formatUpper.startsWith('ZIP:') || formatUpper.includes(':ZIP')) {
+              return {
+                content: [{ type: 'text', text: `❌ Cannot aggregate ZIP resources directly. Download and extract first: ${resource.url}` }],
+              };
+            }
+
+            const fetchedData = await this.dataFetcher.fetchResource(resource.url, resource.format, { fullData: true });
+            if (fetchedData.error) {
+              return {
+                content: [{
+                  type: 'text',
+                  text: `❌ Error fetching data for aggregation: ${fetchedData.error}\n\nTry a different resource or download manually: ${resource.url}`,
+                }],
+              };
+            }
+
+            const GEOMETRY_COLS = new Set(['geometry_coordinates', 'geometry_type', 'geometry']);
+            const lorInfo = this.lorLookup.hasLORColumns(fetchedData.columns);
+            let rows = fetchedData.rows;
+            if (this.lorLookup.isLoaded() && (lorInfo.hasBEZ || lorInfo.hasRAUMID)) {
+              rows = rows.map(row => this.lorLookup.enrichRow(row));
+            }
+
+            rows = rows.map(row => {
+              const clean: any = {};
+              for (const [k, v] of Object.entries(row)) {
+                if (!GEOMETRY_COLS.has(k)) clean[k] = v;
+              }
+              return clean;
+            });
+
+            const toNumber = (v: any): number | null => {
+              if (v === null || v === undefined || v === '') return null;
+              const n = Number(v);
+              return Number.isFinite(n) ? n : null;
+            };
+
+            const matchesFilter = (row: Record<string, any>, filter: { column: string; op: string; value: any }): boolean => {
+              const raw = row[filter.column];
+              const rawStr = String(raw ?? '');
+              const filterStr = String(filter.value ?? '');
+              const rawNum = toNumber(raw);
+              const filterNum = toNumber(filter.value);
+
+              switch (filter.op) {
+                case 'eq': return rawStr === filterStr;
+                case 'neq': return rawStr !== filterStr;
+                case 'contains': return rawStr.toLowerCase().includes(filterStr.toLowerCase());
+                case 'in': {
+                  const values = Array.isArray(filter.value) ? filter.value.map((v: any) => String(v)) : [filterStr];
+                  return values.includes(rawStr);
+                }
+                case 'gt': return rawNum !== null && filterNum !== null ? rawNum > filterNum : rawStr > filterStr;
+                case 'gte': return rawNum !== null && filterNum !== null ? rawNum >= filterNum : rawStr >= filterStr;
+                case 'lt': return rawNum !== null && filterNum !== null ? rawNum < filterNum : rawStr < filterStr;
+                case 'lte': return rawNum !== null && filterNum !== null ? rawNum <= filterNum : rawStr <= filterStr;
+                default: return false;
+              }
+            };
+
+            const filteredRows = rows.filter(row => filters.every(f => matchesFilter(row, f)));
+            const groupCols = group_by ?? [];
+            const groupMap = new Map<string, any>();
+            const metricName = (m: { op: string; column?: string; as?: string }) => m.as || `${m.op}_${m.column || 'rows'}`;
+
+            const ensureGroup = (row: Record<string, any>) => {
+              const groupKey = groupCols.length > 0
+                ? JSON.stringify(groupCols.map(col => row[col] ?? null))
+                : '__all__';
+
+              let agg = groupMap.get(groupKey);
+              if (!agg) {
+                agg = {};
+                for (const col of groupCols) agg[col] = row[col] ?? null;
+                for (const m of metrics) {
+                  const name = metricName(m);
+                  if (m.op === 'count') agg[name] = 0;
+                  else if (m.op === 'sum' || m.op === 'avg') {
+                    agg[name] = 0;
+                    if (m.op === 'avg') agg[`__avg_count_${name}`] = 0;
+                  } else if (m.op === 'min' || m.op === 'max') agg[name] = null;
+                  else if (m.op === 'count_distinct') agg[`__distinct_${name}`] = new Set<string>();
+                }
+                groupMap.set(groupKey, agg);
+              }
+              return agg;
+            };
+
+            for (const row of filteredRows) {
+              const agg = ensureGroup(row);
+              for (const m of metrics) {
+                const name = metricName(m);
+                const value = m.column ? row[m.column] : undefined;
+                const num = toNumber(value);
+                switch (m.op) {
+                  case 'count':
+                    agg[name] += 1;
+                    break;
+                  case 'sum':
+                    if (num !== null) agg[name] += num;
+                    break;
+                  case 'avg':
+                    if (num !== null) {
+                      agg[name] += num;
+                      agg[`__avg_count_${name}`] += 1;
+                    }
+                    break;
+                  case 'min':
+                    if (num !== null) agg[name] = agg[name] === null ? num : Math.min(agg[name], num);
+                    break;
+                  case 'max':
+                    if (num !== null) agg[name] = agg[name] === null ? num : Math.max(agg[name], num);
+                    break;
+                  case 'count_distinct':
+                    agg[`__distinct_${name}`].add(String(value ?? ''));
+                    break;
+                }
+              }
+            }
+
+            let resultRows = Array.from(groupMap.values()).map((agg: any) => {
+              const out: any = {};
+              for (const col of groupCols) out[col] = agg[col];
+              for (const m of metrics) {
+                const name = metricName(m);
+                if (m.op === 'avg') {
+                  const c = agg[`__avg_count_${name}`];
+                  out[name] = c > 0 ? agg[name] / c : null;
+                } else if (m.op === 'count_distinct') {
+                  out[name] = agg[`__distinct_${name}`].size;
+                } else {
+                  out[name] = agg[name];
+                }
+              }
+              return out;
+            });
+
+            if (sort.length > 0) {
+              resultRows.sort((a, b) => {
+                for (const s of sort) {
+                  const dir = (s.direction || 'asc').toLowerCase() === 'desc' ? -1 : 1;
+                  const av = a[s.column];
+                  const bv = b[s.column];
+                  if (av === bv) continue;
+                  if (av === null || av === undefined) return 1;
+                  if (bv === null || bv === undefined) return -1;
+                  if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+                  return String(av).localeCompare(String(bv)) * dir;
+                }
+                return 0;
+              });
+            }
+
+            const safeLimit = Math.max(1, Math.min(Number(limit) || 100, 1000));
+            const limitedRows = resultRows.slice(0, safeLimit);
+
+            let responseText = `# Aggregation result: ${dataset.title}\n\n`;
+            responseText += `**Source resource:** ${resource.name} (${resource.format})\n`;
+            responseText += `**Input rows:** ${rows.length}\n`;
+            responseText += `**Rows after filters:** ${filteredRows.length}\n`;
+            responseText += `**Groups:** ${resultRows.length}`;
+            if (resultRows.length > limitedRows.length) {
+              responseText += ` (showing first ${limitedRows.length})`;
+            }
+            responseText += `\n\n`;
+            responseText += `**Group by:** ${groupCols.length > 0 ? groupCols.join(', ') : '(none)'}\n`;
+            responseText += `**Metrics:** ${metrics.map(m => `${metricName(m)}=${m.op}${m.column ? `(${m.column})` : ''}`).join(', ')}\n`;
+            if (filters.length > 0) {
+              responseText += `**Filters:** ${filters.map(f => `${f.column} ${f.op} ${Array.isArray(f.value) ? `[${f.value.join(', ')}]` : f.value}`).join(' AND ')}\n`;
+            }
+            responseText += `\n## Result rows\n\n`;
+            responseText += `\`\`\`json\n${JSON.stringify(limitedRows, null, 2)}\n\`\`\`\n`;
 
             return {
               content: [{ type: 'text', text: responseText }],
