@@ -10,7 +10,10 @@
     "start:http": "node dist/http-server.js",
     "dev": "tsx src/index.ts",
     "dev:http": "tsx src/http-server.ts",
-    "dev:browser": "tsx src/browser-fetcher.ts"
+    "dev:browser": "tsx src/browser-fetcher.ts",
+    "test": "vitest run --reporter=verbose tests/query-processor.test.ts",
+    "test:watch": "vitest tests/query-processor.test.ts",
+    "test:integration": "vitest run --reporter=verbose tests/search.integration.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
@@ -33,6 +36,7 @@
     "@types/proj4": "^2.5.6",
     "@types/puppeteer": "^5.4.7",
     "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.18"
   }
 }

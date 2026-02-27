@@ -80,7 +80,7 @@ export class QueryProcessor {
     'health':       ['gesundheit'],
     'gesundheit':   ['krankenhaus', 'arzt'],
     'crime':        ['kriminalität', 'straftaten'],
-    'kriminalität': ['straftaten', 'polizei'],
+    'kriminalität': ['straftaten', 'kriminalitätsatlas'],
 
     // Public transport
     'öpnv':         ['nahverkehr', 's-bahn', 'u-bahn', 'bus'],
@@ -111,9 +111,17 @@ export class QueryProcessor {
    * "Einwohner 2024"         → "(einwohner OR einwohnerinnen OR bevölkerung OR 2024)"
    */
   buildQuery(userQuery: string): string {
-    const tokens = userQuery
+    const trimmed = userQuery.trim();
+
+    // Pass through structured Solr queries unchanged (field qualifiers, operators, wildcards)
+    const isStructured = /[+\-":()\[\]{}\\]|\b(?:AND|OR|NOT)\b/i.test(trimmed)
+      || trimmed === '*' || trimmed === '*:*';
+    if (isStructured) return trimmed;
+
+    const tokens = trimmed
       .toLowerCase()
       .split(/\s+/)
+      .map(t => t.replace(/[?!.,;'"()[\]{}]+/g, ''))  // strip punctuation (not : to preserve potential field queries)
       .filter(t => t.length >= 2 && !this.STOP_WORDS.has(t));
 
     if (tokens.length === 0) return userQuery;
