@@ -11,15 +11,19 @@ export class QueryProcessor {
    */
   private readonly SEED_MAPPINGS: Record<string, string[]> = {
     // Cycling / transport
-    'rad':          ['fahrrad', 'radverkehr'],
-    'fahrrad':      ['radverkehr'],
-    'radverkehr':   ['fahrrad'],
-    'cycling':      ['fahrrad', 'radverkehr'],
-    'bicycle':      ['fahrrad', 'radverkehr'],
-    'auto':         ['kfz', 'pkw'],
-    'car':          ['kfz', 'pkw', 'auto'],
-    'traffic':      ['verkehr'],
-    'bahn':         ['s-bahn', 'u-bahn', 'straßenbahn'],
+    'rad':                  ['fahrrad', 'radverkehr'],
+    'fahrrad':              ['radverkehr'],
+    'radverkehr':           ['fahrrad'],
+    'cycling':              ['fahrrad', 'radverkehr'],
+    'bicycle':              ['fahrrad', 'radverkehr'],
+    'auto':                 ['kfz', 'pkw'],
+    'car':                  ['kfz', 'pkw', 'auto'],
+    'traffic':              ['verkehr'],
+    'bahn':                 ['s-bahn', 'u-bahn', 'straßenbahn'],
+    'fahrradweg':           ['radverkehrsanlagen', 'radverkehr', 'fahrrad'],
+    'fahrradwege':          ['radverkehrsanlagen', 'radverkehr', 'fahrrad'],
+    'fahrradinfrastruktur': ['radverkehrsanlagen', 'radverkehr'],
+    'radweg':               ['radverkehrsanlagen', 'radverkehr'],
 
     // Population / demographics
     'bevölkerung':      ['einwohner', 'einwohnerinnen'],
@@ -27,6 +31,10 @@ export class QueryProcessor {
     'einwohner':        ['einwohnerinnen', 'bevölkerung'],
     'population':       ['einwohner', 'einwohnerinnen', 'bevölkerung'],
     'demographics':     ['einwohner', 'bevölkerung', 'demografie'],
+
+    // Districts / LOR
+    'bezirk': ['lor', 'planungsraum', 'bezirksregion'],
+    'lor': ['planungsraum', 'bezirksregion', 'lor-planungsräume'],
 
     // Housing / rent
     'miete':        ['mietspiegel', 'mietpreise'],
@@ -90,6 +98,7 @@ export class QueryProcessor {
     'einem', 'von', 'vom', 'zu', 'zum', 'zur', 'bei', 'mit', 'auf', 'aus',
     'nach', 'vor', 'über', 'unter', 'zwischen', 'durch', 'gegen', 'ohne', 'um',
     'wie', 'wo', 'wer', 'was', 'welche', 'welcher', 'welches',
+    'berlin', 'anzahl', 'gibt', 'viele', 'wie', 'es', 'sind', 'wieviele', 'zahl',
   ]);
 
   /**
