@@ -21,7 +21,7 @@ export class BrowserFetcher {
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
-          '--disable-features=DownloadBubble,DownloadBubbleV2' // Disable download UI
+          '--disable-features=DownloadBubble,DownloadBubbleV2'
         ],
       });
     }
@@ -36,18 +36,10 @@ export class BrowserFetcher {
 
       page = await this.browser!.newPage();
 
-      // Prevent actual file downloads to disk - we only want to capture the URL and fetch data in memory
-      const client = await page.createCDPSession();
-      await client.send('Page.setDownloadBehavior', {
-        behavior: 'deny'
-      });
-
-      // Strategy: Capture the actual file URL from network traffic, then fetch it directly.
-      // The statistik-berlin-brandenburg.de site is a Scrivito SPA — the visible URL is a
-      // client-side route and the SPA fetches the real file from a CDN (historically
-      // download.statistik-berlin-brandenburg.de, but the subdomain may change).
-      // We capture any response that looks like a data file rather than hardcoding the domain.
-      let downloadUrl: string | null = null;
+      // Strategy: The statistik-berlin-brandenburg.de site is a Scrivito SPA. Every URL
+      // returns the same HTML shell; the SPA then fetches the actual file from the CDN
+      // (download.statistik-berlin-brandenburg.de) via XHR. We intercept that XHR response
+      // to capture the CDN URL, then fetch the file directly in memory.
       const downloadUrlPromise = new Promise<string | null>((resolve) => {
         let resolved = false;
 
@@ -95,7 +87,7 @@ export class BrowserFetcher {
       }
 
       // Wait for download URL to be captured
-      downloadUrl = await downloadUrlPromise;
+      const downloadUrl = await downloadUrlPromise;
 
       console.error('[Browser] Closing page...');
       await page.close();
@@ -115,7 +107,6 @@ export class BrowserFetcher {
           const text = await response.text();
           console.error(`[Browser] Downloaded ${text.length} characters`);
 
-          // Verify it's CSV data
           const trimmed = text.trim();
           if (!trimmed.toLowerCase().startsWith('<!doctype') &&
               !trimmed.toLowerCase().startsWith('<html') &&
