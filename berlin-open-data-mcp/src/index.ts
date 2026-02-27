@@ -318,14 +318,17 @@ export class BerlinOpenDataMCPServer {
 
               responseText += `\n> **Note**: "Catalog entry updated" is the date the portal record was last edited — it does NOT reflect data currency. The actual reference period is in the dataset title (e.g. "am 31.12.2024") or the "Data period" field above.\n`;
 
-              // Render top organizations from facets so the model has slugs ready to use
+              // Render top organizations from facets — show slugs so the model can filter correctly.
+              // IMPORTANT: the organization parameter requires the slug (e.g. "amt-fur-statistik-berlin-brandenburg"),
+              // NOT the display name ("Amt für Statistik Berlin-Brandenburg"). Using the display name returns 0 results.
               if (result.facets?.organization?.length) {
-                responseText += `\n**Organizations with matching datasets**:\n`;
-                result.facets.organization.slice(0, 5).forEach((f: any) => {
-                  responseText += `- \`${f.name}\` — ${f.display_name} (${f.count} datasets)\n`;
+                responseText += `\n**Organizations with matching datasets** (use the slug as \`organization\` value):\n`;
+                result.facets.organization.slice(0, 6).forEach((f: any) => {
+                  let note = '';
+                  if (f.name.includes('harvester') || f.name.includes('simplesearch')) note = ' ⚠️ re-harvests geodata daily — dominates date-sorted results';
+                  responseText += `- \`${f.name}\` — ${f.display_name} (${f.count} datasets)${note}\n`;
                 });
-                const topOrg = result.facets.organization[0];
-                responseText += `\n**→ To get the most recent data**: call \`search_datasets_filtered\` with \`organization="${topOrg.name}"\` and \`sort="metadata_modified desc"\`\n`;
+                responseText += `\n**→ To get the most recent data**: call \`search_datasets_filtered\` with the chosen \`organization\` slug and \`sort="metadata_modified desc"\`\n`;
               }
 
               responseText += `\n**Next steps**:\n`;
@@ -1040,16 +1043,23 @@ export class BerlinOpenDataMCPServer {
             }
 
             if (result.facets && Object.keys(result.facets).length > 0) {
-              responseText += `\n## Facets (refine with search_datasets_filtered)\n\n`;
+              responseText += `\n## Refine your search\n\n`;
+              responseText += `Use the **slug** (in backticks) as the \`organization\` parameter value — NOT the display name:\n\n`;
 
               if (result.facets.organization?.length) {
-                responseText += `**Organizations**: ${result.facets.organization.map(f => `${f.display_name} (${f.count})`).join(', ')}\n`;
+                responseText += `**Organizations**:\n`;
+                result.facets.organization.forEach((f: any) => {
+                  let note = '';
+                  if (f.name.includes('harvester') || f.name.includes('simplesearch')) note = ' ⚠️ re-harvests geodata daily — dominates date-sorted results';
+                  responseText += `- \`${f.name}\` — ${f.display_name} (${f.count} datasets)${note}\n`;
+                });
+                responseText += `\n**→ To get the most recent data**: re-run with the chosen \`organization\` slug above and \`sort="metadata_modified desc"\`\n\n`;
               }
               if (result.facets.tags?.length) {
-                responseText += `**Tags**: ${result.facets.tags.map(f => `${f.name} (${f.count})`).join(', ')}\n`;
+                responseText += `**Tags** (use as \`tag\` filter): ${result.facets.tags.map((f: any) => `\`${f.name}\` (${f.count})`).join(', ')}\n`;
               }
               if (result.facets.res_format?.length) {
-                responseText += `**Formats**: ${result.facets.res_format.map(f => `${f.name} (${f.count})`).join(', ')}\n`;
+                responseText += `**Formats** (use as \`format\` filter): ${result.facets.res_format.map((f: any) => `\`${f.name}\` (${f.count})`).join(', ')}\n`;
               }
             }
 
