@@ -42,7 +42,11 @@ export class BrowserFetcher {
         behavior: 'deny'
       });
 
-      // Strategy: Capture the download URL from network traffic, then fetch it directly
+      // Strategy: Capture the actual file URL from network traffic, then fetch it directly.
+      // The statistik-berlin-brandenburg.de site is a Scrivito SPA — the visible URL is a
+      // client-side route and the SPA fetches the real file from a CDN (historically
+      // download.statistik-berlin-brandenburg.de, but the subdomain may change).
+      // We capture any response that looks like a data file rather than hardcoding the domain.
       let downloadUrl: string | null = null;
       const downloadUrlPromise = new Promise<string | null>((resolve) => {
         let resolved = false;
@@ -51,25 +55,31 @@ export class BrowserFetcher {
           if (resolved) return;
 
           const responseUrl = response.url();
+          // Skip the initial SPA shell request itself
+          if (responseUrl === url) return;
 
-          // Look for the actual CSV download URL from the download subdomain
-          if (responseUrl.includes('download.statistik-berlin-brandenburg.de') &&
-              responseUrl.endsWith('.csv') &&
-              response.status() === 200) {
-            console.error('[Browser] Found download URL:', responseUrl);
+          const contentType = response.headers()['content-type'] || '';
+          const looksLikeFile =
+            contentType.includes('text/csv') ||
+            contentType.includes('application/csv') ||
+            contentType.includes('application/octet-stream') ||
+            contentType.includes('application/vnd') ||
+            (responseUrl.match(/\.(csv|xlsx?|json|geojson|kml)(\?.*)?$/i) && !contentType.includes('text/html'));
+
+          if (looksLikeFile && response.status() === 200) {
+            console.error('[Browser] Found file download URL:', responseUrl, 'content-type:', contentType);
             resolved = true;
             resolve(responseUrl);
           }
         });
 
-        // Timeout after waiting period (reduced from 20s to 15s)
         setTimeout(() => {
           if (!resolved) {
             console.error('[Browser] Timeout waiting for download URL');
             resolved = true;
             resolve(null);
           }
-        }, 15000);
+        }, 20000);
       });
 
       // Navigate to the URL to trigger the SPA

@@ -44,7 +44,7 @@ export class DataFetcher {
       return this.fetchWFS(url, options?.fullData ?? false);
     }
 
-    // First try with browser if this URL needs it
+    // For non-file-extension URLs that require JS rendering, try browser first
     if (this.shouldUseBrowser(url)) {
       const browserResult = await this.fetchWithBrowser(url, format);
       if (browserResult) return browserResult;
@@ -89,6 +89,15 @@ export class DataFetcher {
 
       // For text formats (CSV, JSON), get as text
       const text = await response.text();
+
+      // If we got HTML back for a direct file URL, try browser automation as a fallback
+      const trimmed = text.trim().toLowerCase();
+      if ((trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html')) &&
+          this.useBrowserAutomation && BrowserFetcher.isAvailable()) {
+        console.error('[DataFetcher] Direct fetch returned HTML, retrying with browser automation...');
+        const browserResult = await this.fetchWithBrowser(url, format);
+        if (browserResult) return browserResult;
+      }
 
       // Parse based on format
       return this.parseData(text, format, contentType);
