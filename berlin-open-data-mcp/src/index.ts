@@ -16,6 +16,18 @@ import { DataFetcher } from './data-fetcher.js';
 import { DataSampler } from './data-sampler.js';
 import { GeoJSONTransformer } from './geojson-transformer.js';
 import { LORLookupService } from './lor-lookup.js';
+import {
+  SearchDatasetsSchema,
+  SearchFilteredSchema,
+  GetFacetsSchema,
+  ListTagsSchema,
+  GetDatasetDetailsSchema,
+  ListAllDatasetsSchema,
+  FetchDatasetDataSchema,
+  AggregateDatasetSchema,
+  DownloadDatasetSchema,
+  GetPortalStatsSchema,
+} from './schemas.js';
 export interface BerlinOpenDataMCPServerOptions {}
 
 export class BerlinOpenDataMCPServer {
@@ -332,11 +344,11 @@ export class BerlinOpenDataMCPServer {
       try {
         switch (name) {
           case 'search_berlin_datasets': {
-            const { query, limit = 20, sort } = args as {
-              query: string;
-              limit?: number;
-              sort?: string;
-            };
+            const parsed = SearchDatasetsSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
+            }
+            const { query, limit, sort } = parsed.data;
 
             // Build a single OR-joined edismax query.
             // Synonyms from SEED_MAPPINGS are folded in client-side so Solr
@@ -424,7 +436,11 @@ export class BerlinOpenDataMCPServer {
           }
 
           case 'get_dataset_details': {
-            const { dataset_id } = args as { dataset_id: string };
+            const parsed = GetDatasetDetailsSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
+            }
+            const { dataset_id } = parsed.data;
             const dataset = await this.api.getDataset(dataset_id);
 
             let details = `# ${dataset.title}\n\n`;
@@ -505,6 +521,10 @@ export class BerlinOpenDataMCPServer {
           }
 
           case 'get_portal_stats': {
+            const parsed = GetPortalStatsSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
+            }
             const stats = await this.api.getPortalStats();
 
             let responseText = '# Berlin Open Data Portal Statistics\n\n';
@@ -522,7 +542,11 @@ export class BerlinOpenDataMCPServer {
           }
 
           case 'list_all_datasets': {
-            const { offset = 0, limit = 100 } = args as { offset?: number; limit?: number };
+            const parsed = ListAllDatasetsSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
+            }
+            const { offset, limit } = parsed.data;
             const result = await this.api.listAllDatasets(offset, limit);
 
             let responseText = `# All Berlin Open Datasets\n\n`;
@@ -544,20 +568,11 @@ export class BerlinOpenDataMCPServer {
           }
 
           case 'fetch_dataset_data': {
-            const { dataset_id, resource_id, full_data = false } = args as {
-              dataset_id: string;
-              resource_id?: string;
-              full_data?: boolean;
-            };
-
-            if (!dataset_id) {
-              return {
-                content: [{
-                  type: 'text',
-                  text: '❌ Missing required parameter: dataset_id. Use `search_berlin_datasets` to find dataset IDs.',
-                }],
-              };
+            const parsed = FetchDatasetDataSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
             }
+            const { dataset_id, resource_id, full_data } = parsed.data;
 
             const LARGE_DATASET_THRESHOLD = 1000;
 
@@ -750,6 +765,10 @@ export class BerlinOpenDataMCPServer {
           }
 
           case 'aggregate_dataset': {
+            const parsed = AggregateDatasetSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
+            }
             const {
               dataset_id,
               resource_id,
@@ -758,27 +777,7 @@ export class BerlinOpenDataMCPServer {
               filters = [],
               sort = [],
               limit = 100,
-            } = args as {
-              dataset_id: string;
-              resource_id?: string;
-              group_by?: string[];
-              metrics: Array<{ op: 'sum' | 'avg' | 'min' | 'max' | 'count' | 'count_distinct'; column?: string; as?: string }>;
-              filters?: Array<{ column: string; op: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'in'; value: any }>;
-              sort?: Array<{ column: string; direction?: 'asc' | 'desc' }>;
-              limit?: number;
-            };
-
-            if (!dataset_id) {
-              return {
-                content: [{ type: 'text', text: '❌ Missing required parameter: dataset_id.' }],
-              };
-            }
-
-            if (!metrics || metrics.length === 0) {
-              return {
-                content: [{ type: 'text', text: '❌ Missing required parameter: metrics (at least one metric is required).' }],
-              };
-            }
+            } = parsed.data;
 
             const dataset = await this.api.getDataset(dataset_id);
             if (!dataset.resources || dataset.resources.length === 0) {
@@ -980,11 +979,11 @@ export class BerlinOpenDataMCPServer {
           }
 
           case 'download_dataset': {
-            const { dataset_id, resource_id, format: requestedFormat } = args as {
-              dataset_id: string;
-              resource_id?: string;
-              format?: 'csv' | 'json' | 'geojson';
-            };
+            const parsed = DownloadDatasetSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
+            }
+            const { dataset_id, resource_id, format: requestedFormat } = parsed.data;
 
             // Get dataset to find resources
             const dataset = await this.api.getDataset(dataset_id);
@@ -1269,23 +1268,19 @@ export class BerlinOpenDataMCPServer {
           }
 
           case 'search_datasets_filtered': {
+            const parsed = SearchFilteredSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
+            }
             const {
-              query = '*',
+              query,
               organization,
               tag,
               format,
               modified_since,
-              sort = 'score desc, metadata_modified desc',
-              rows = 20,
-            } = args as {
-              query?: string;
-              organization?: string;
-              tag?: string;
-              format?: string;
-              modified_since?: string;
-              sort?: string;
-              rows?: number;
-            };
+              sort,
+              rows,
+            } = parsed.data;
 
             const processedQuery = query !== '*' ? this.queryProcessor.buildQuery(query) : query;
 
@@ -1375,7 +1370,11 @@ export class BerlinOpenDataMCPServer {
           }
 
           case 'get_facets': {
-            const { query = '*', limit = 10 } = args as { query?: string; limit?: number };
+            const parsed = GetFacetsSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
+            }
+            const { query, limit } = parsed.data;
 
             const facets = await this.api.getFacets(
               query,
@@ -1422,7 +1421,11 @@ export class BerlinOpenDataMCPServer {
           }
 
           case 'list_tags': {
-            const { query, limit = 50 } = args as { query?: string; limit?: number };
+            const parsed = ListTagsSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
+            }
+            const { query, limit } = parsed.data;
 
             const tags = await this.api.listTags(limit, query);
 

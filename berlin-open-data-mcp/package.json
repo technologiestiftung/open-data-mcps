@@ -27,7 +27,8 @@
     "node-fetch": "^3.3.2",
     "papaparse": "^5.5.3",
     "proj4": "^2.20.2",
-    "puppeteer": "^24.26.1"
+    "puppeteer": "^24.26.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
