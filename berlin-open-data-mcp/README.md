@@ -54,12 +54,16 @@ The server implements the MCP protocol and provides these tools:
 
 3. **search_berlin_datasets**: Search datasets using natural language
 4. **get_dataset_details**: Get detailed information about a specific dataset (includes resource IDs for downloading)
+5. **list_geo_layers**: Discover available WFS layers for a dataset (requires dataset ID with WFS resource)
 
 **Data Fetching & Analysis:**
 
-5. **fetch_dataset_data**: View dataset contents in chat for analysis (returns preview, caches full data)
-6. **download_dataset**: Download dataset as a file to user's computer (triggers browser download)
-7. **execute_code**: Run JavaScript code on cached dataset for calculations and aggregations
+6. **fetch_geo_features**: Fetch features from a WFS layer as GeoJSON (supports CQL filters for property-based queries)
+7. **fetch_dataset_data**: View dataset contents in chat for analysis (returns preview, caches full data)
+8. **download_dataset**: Download dataset as a file to user's computer (triggers browser download)
+9. **aggregate_dataset**: Run server-side aggregations on a dataset (totals, counts, group-by)
+10. **get_facets**: Get top organizations, tags, and formats for a query
+11. **list_tags**: List available tags from the portal
 
 ### Example Queries
 
@@ -81,9 +85,17 @@ User: "What's available in the Berlin Open Data Portal?"
 ```
 User: "Wie viele Einwohner hat jeder Bezirk?"
 → Uses search_berlin_datasets for population data
-→ Uses fetch_dataset_data (returns preview, caches full data server-side)
-→ Uses execute_code to aggregate: data.reduce((acc, row) => { acc[row.BEZIRK_NAME] = (acc[row.BEZIRK_NAME] || 0) + parseInt(row.E_E); return acc; }, {})
-→ Returns results: { "Mitte": 397004, "Friedrichshain-Kreuzberg": 292624, ... }
+→ Uses aggregate_dataset: dataset_id="...", group_by=["BEZIRK_NAME"], metrics=[{op: "sum", column: "E_E", as: "einwohner"}]
+→ Returns results: [{ "BEZIRK_NAME": "Mitte", "einwohner": 397004 }, { "BEZIRK_NAME": "Pankow", "einwohner": 413168 }, ...]
+```
+
+**Discover and fetch geodata (WFS):**
+```
+User: "Show me all drinking fountains in Mitte"
+→ Uses search_berlin_datasets for "drinking fountains"
+→ Uses list_geo_layers to see available WFS layers
+→ Uses fetch_geo_features: wfs_url="...", typename="...", property_filter="bezirk = 'Mitte'"
+→ Returns GeoJSON features for fountains in Mitte
 ```
 
 **Download data for local use:**
@@ -94,35 +106,20 @@ User: "Lade die Zugriffsstatistik herunter" / "Download the traffic data"
 → User saves file locally with browser download dialog
 ```
 
-### Data Caching & Code Execution
+### Data Aggregation
 
-The server uses session-based data caching to enable analysis without context overflow:
+The server supports server-side aggregations to enable analysis of large datasets without context overflow:
 
-1. **fetch_dataset_data** fetches full data but returns only a 3-row preview
-2. Full data is cached server-side (per MCP session)
-3. **execute_code** runs JavaScript on cached data in a sandboxed environment
+1. **aggregate_dataset** runs counts, sums, averages, min/max, and count-distinct operations server-side.
+2. Supports **group_by** for breakdowns (e.g., population by district).
+3. Supports **filters** applied before aggregation (e.g., only show data for a specific year).
+4. Returns only the aggregated result rows to the client.
 
-**execute_code features:**
-- Sandboxed execution using Node.js `vm` module
-- 5-second timeout protection
-- 1MB output size limit
-- Access to cached data via `data` variable (array of row objects)
-- Safe globals: Math, Date, JSON, Array, Object, String, Number, Boolean
-
-**Example code patterns:**
-```javascript
-// Count rows per category
-data.reduce((acc, row) => { acc[row.category] = (acc[row.category] || 0) + 1; return acc; }, {})
-
-// Sum a numeric column
-data.reduce((sum, row) => sum + parseInt(row.value), 0)
-
-// Filter and transform
-data.filter(row => row.year === "2024").map(row => ({ name: row.name, total: row.count }))
-
-// Find max/min
-data.reduce((max, row) => parseInt(row.value) > parseInt(max.value) ? row : max, data[0])
-```
+**Example patterns:**
+- Sum population by district
+- Count number of schools per neighborhood
+- Find the latest measurement value across all stations
+- Group and sort results by multiple columns
 
 ### Running the Server
 
@@ -140,7 +137,7 @@ The HTTP server exposes:
 - `/mcp` - MCP endpoint (Streamable HTTP transport)
 - `/health` - Health check endpoint
 
-**Deployed instance**: https://bod-mcp.up.railway.app
+**Deployed instance**: 
 
 ## Geodata Support
 

@@ -2,7 +2,6 @@
 // ABOUTME: MCP server implementation for Berlin Open Data Portal
 // ABOUTME: Handles tool registration and request routing for dataset discovery and data fetching
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
@@ -16,6 +15,7 @@ import { DataFetcher } from './data-fetcher.js';
 import { DataSampler } from './data-sampler.js';
 import { GeoJSONTransformer } from './geojson-transformer.js';
 import { LORLookupService } from './lor-lookup.js';
+import { WFSClient } from './wfs-client.js';
 import {
   SearchDatasetsSchema,
   SearchFilteredSchema,
@@ -27,19 +27,23 @@ import {
   AggregateDatasetSchema,
   DownloadDatasetSchema,
   GetPortalStatsSchema,
+  ListGeoLayersSchema,
+  FetchGeoFeaturesSchema,
 } from './schemas.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 export interface BerlinOpenDataMCPServerOptions {}
 
 export class BerlinOpenDataMCPServer {
-  private server: Server;
+  private server: McpServer;
   private api: BerlinOpenDataAPI;
   private queryProcessor: QueryProcessor;
   private dataFetcher: DataFetcher;
   private dataSampler: DataSampler;
   private geoJSONTransformer: GeoJSONTransformer;
   private lorLookup: LORLookupService;
+  private wfsClient: WFSClient;
   constructor(options: BerlinOpenDataMCPServerOptions = {}) {
-    this.server = new Server(
+    this.server = new McpServer(
       {
         name: 'berlin-opendata-server',
         version: '1.0.0',
@@ -54,7 +58,8 @@ export class BerlinOpenDataMCPServer {
 
     this.api = new BerlinOpenDataAPI();
     this.queryProcessor = new QueryProcessor();
-    this.dataFetcher = new DataFetcher({ useBrowserAutomation: true });
+    this.wfsClient = new WFSClient();
+    this.dataFetcher = new DataFetcher({ useBrowserAutomation: true, wfsClient: this.wfsClient });
     this.dataSampler = new DataSampler();
     this.geoJSONTransformer = new GeoJSONTransformer();
     this.lorLookup = new LORLookupService();
@@ -63,7 +68,7 @@ export class BerlinOpenDataMCPServer {
   }
 
   private setupHandlers() {
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    this.server.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
         {
           name: 'search_berlin_datasets',
@@ -335,10 +340,51 @@ export class BerlinOpenDataMCPServer {
             required: ['dataset_id'],
           },
         },
+        {
+          name: 'list_geo_layers',
+          description: 'Discover available WFS layers for a dataset. Returns layer names, titles, feature counts, and bounding boxes. Use after search_datasets to explore geodata in detail.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              dataset_id: {
+                type: 'string',
+                description: 'Dataset ID from search results (must have a WFS resource)',
+              },
+            },
+            required: ['dataset_id'],
+          },
+        },
+        {
+          name: 'fetch_geo_features',
+          description: 'Fetch features from a WFS layer as GeoJSON. Returns properties, geometry types, and sample data. Supports CQL filters for property-based queries (e.g., "bezirk = \'Mitte\'").',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              wfs_url: {
+                type: 'string',
+                description: 'WFS service URL from list_geo_layers or dataset details',
+              },
+              typename: {
+                type: 'string',
+                description: 'Layer/typename from list_geo_layers (e.g., "poi_schulen")',
+              },
+              limit: {
+                type: 'number',
+                description: 'Maximum features to return (default: 100, max: 5000)',
+                default: 100,
+              },
+              property_filter: {
+                type: 'string',
+                description: 'CQL filter expression (e.g., "bezirk = \'Mitte\'", "name LIKE \'%Schule%\'")',
+              },
+            },
+            required: ['wfs_url', 'typename'],
+          },
+        },
       ],
     }));
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
       try {
@@ -1369,6 +1415,90 @@ export class BerlinOpenDataMCPServer {
             return { content: [{ type: 'text', text: responseText }] };
           }
 
+          case 'list_geo_layers': {
+            const parsed = ListGeoLayersSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
+            }
+            const { dataset_id } = parsed.data;
+
+            // Get dataset to find WFS resources
+            const dataset = await this.api.getDataset(dataset_id);
+            const wfsResource = dataset.resources?.find(r => r.format?.toUpperCase() === 'WFS');
+
+            if (!wfsResource || !wfsResource.url) {
+              return {
+                content: [{
+                  type: 'text',
+                  text: `❌ No WFS resource found for dataset "${dataset_id}". Use \`get_dataset_details\` to see available resources.`,
+                }],
+              };
+            }
+
+            const { baseUrl, preservedParams } = this.wfsClient.parseWFSUrl(wfsResource.url);
+            const capabilities = await this.wfsClient.getCapabilities(baseUrl, preservedParams);
+
+            let responseText = `# Available Geo Layers for: ${dataset.title}\n\n`;
+            responseText += `**WFS URL**: ${baseUrl}\n\n`;
+
+            for (const ft of capabilities.featureTypes) {
+              responseText += `### ${ft.title}\n`;
+              responseText += `- **Layer Name (typename)**: \`${ft.name}\`\n`;
+              if (ft.abstract) {
+                responseText += `- **Abstract**: ${ft.abstract}\n`;
+              }
+              
+              // Get feature count for this layer
+              const count = await this.wfsClient.getFeatureCount(baseUrl, ft.name, preservedParams);
+              responseText += `- **Feature Count**: ${count.toLocaleString()}\n\n`;
+            }
+
+            responseText += `\n**Next steps**: Use \`fetch_geo_features\` with the \`wfs_url\` and \`typename\` above to fetch data.`;
+
+            return {
+              content: [{ type: 'text', text: responseText }],
+            };
+          }
+
+          case 'fetch_geo_features': {
+            const parsed = FetchGeoFeaturesSchema.safeParse(args);
+            if (!parsed.success) {
+              return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
+            }
+            const { wfs_url, typename, limit, property_filter } = parsed.data;
+
+            const { baseUrl, preservedParams } = this.wfsClient.parseWFSUrl(wfs_url);
+            const geojson = await this.wfsClient.getFeatures(
+              baseUrl,
+              typename,
+              { count: limit, cqlFilter: property_filter },
+              preservedParams
+            );
+
+            let responseText = `# Geo Features: ${typename}\n\n`;
+            responseText += `**WFS URL**: ${baseUrl}\n`;
+            responseText += `**Total features returned**: ${geojson.features.length}\n\n`;
+
+            if (geojson.features.length > 0) {
+              const firstFeature = geojson.features[0];
+              const properties = Object.keys(firstFeature.properties || {});
+              responseText += `**Properties (${properties.length})**: ${properties.join(', ')}\n`;
+              responseText += `**Geometry Type**: ${firstFeature.geometry?.type || 'Unknown'}\n\n`;
+
+              responseText += `## Sample Data (first 3 features)\n\n`;
+              const preview = geojson.features.slice(0, 3);
+              responseText += `\`\`\`json\n${JSON.stringify(preview, null, 2)}\n\`\`\`\n\n`;
+            } else {
+              responseText += `No features found matching the criteria.\n`;
+            }
+
+            responseText += `\n**Note**: For larger datasets or full analysis, use \`download_dataset\` to get the complete GeoJSON.`;
+
+            return {
+              content: [{ type: 'text', text: responseText }],
+            };
+          }
+
           case 'get_facets': {
             const parsed = GetFacetsSchema.safeParse(args);
             if (!parsed.success) {
@@ -1459,7 +1589,7 @@ export class BerlinOpenDataMCPServer {
       }
     });
 
-    this.server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+    this.server.server.setRequestHandler(ListPromptsRequestSchema, async () => ({
       prompts: [
         {
           name: 'berlin_data_discovery',
@@ -1480,7 +1610,7 @@ export class BerlinOpenDataMCPServer {
       ],
     }));
 
-    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    this.server.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
       if (name === 'berlin_data_discovery') {

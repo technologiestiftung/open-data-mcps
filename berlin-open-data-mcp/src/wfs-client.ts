@@ -1,6 +1,3 @@
-// ABOUTME: WFS (Web Feature Service) client implementing OGC WFS 2.0.0 protocol
-// ABOUTME: Handles GetCapabilities and GetFeature requests for all Berlin WFS services
-
 import axios from 'axios';
 import { DOMParser } from '@xmldom/xmldom';
 import type { FeatureCollection } from 'geojson';
@@ -17,10 +14,11 @@ export interface WFSCapabilities {
 export interface WFSFeatureOptions {
   count?: number;
   startIndex?: number;
+  cqlFilter?: string;
 }
 
 export class WFSClient {
-  private readonly REQUEST_TIMEOUT = 30000; // 30 seconds
+  private readonly REQUEST_TIMEOUT = 30000; 
 
   /**
    * Parse WFS URL to extract base service URL and preserve non-WFS parameters
@@ -177,7 +175,7 @@ export class WFSClient {
     options: WFSFeatureOptions = {},
     preservedParams?: URLSearchParams
   ): Promise<FeatureCollection> {
-    const { count = 1000, startIndex = 0 } = options;
+    const { count = 1000, startIndex = 0, cqlFilter } = options;
 
     const url = new URL(baseUrl);
 
@@ -197,7 +195,11 @@ export class WFSClient {
     url.searchParams.set('COUNT', count.toString());
     url.searchParams.set('STARTINDEX', startIndex.toString());
 
-    // Request WGS84 coordinates directly for services that support it (88.7% of Berlin WFS)
+    if (cqlFilter) {
+      url.searchParams.set('CQL_FILTER', cqlFilter);
+    }
+
+    // Request WGS84 coordinates directly for services that support it 
     // gdi.berlin.de supports srsName parameter, fbinter.stadt-berlin.de doesn't (being phased out)
     if (baseUrl.includes('gdi.berlin.de')) {
       url.searchParams.set('srsName', 'EPSG:4326');
@@ -287,7 +289,6 @@ export class WFSClient {
 
       return 0;
     } catch (error) {
-      // If count fails, return 0 (non-critical - we can still fetch features)
       console.warn('Could not get feature count:', error);
       return 0;
     }

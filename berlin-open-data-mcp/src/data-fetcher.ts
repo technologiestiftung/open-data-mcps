@@ -22,9 +22,11 @@ export class DataFetcher {
   private readonly MAX_DOWNLOAD_SIZE = 50 * 1024 * 1024; // 50MB limit
   private readonly REQUEST_TIMEOUT = 30000; // 30 seconds
   private readonly useBrowserAutomation: boolean;
+  private readonly wfsClient: WFSClient;
 
-  constructor(options: { useBrowserAutomation?: boolean } = {}) {
+  constructor(options: { useBrowserAutomation?: boolean; wfsClient?: WFSClient } = {}) {
     this.useBrowserAutomation = options.useBrowserAutomation !== false; // Default true
+    this.wfsClient = options.wfsClient || new WFSClient();
   }
 
   private needsBrowserFetch(url: string): boolean {
@@ -531,7 +533,7 @@ export class DataFetcher {
    */
   private async fetchWFS(url: string, fullData: boolean): Promise<FetchedData> {
     try {
-      const wfsClient = new WFSClient();
+      const wfsClient = this.wfsClient;
 
       // Parse URL and preserve non-WFS params (like nodeId)
       const { baseUrl, preservedParams } = wfsClient.parseWFSUrl(url);
