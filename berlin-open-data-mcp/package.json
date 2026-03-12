@@ -16,7 +16,7 @@
     "test:integration": "vitest run --reporter=verbose src/tests/search.integration.test.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "@tmcw/togeojson": "^7.1.2",
     "@types/geojson": "^7946.0.16",
     "@xmldom/xmldom": "^0.8.11",
