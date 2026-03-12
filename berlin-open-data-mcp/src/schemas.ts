@@ -77,3 +77,14 @@ export const DownloadDatasetSchema = z.object({
 });
 
 export const GetPortalStatsSchema = z.object({});
+
+export const ListGeoLayersSchema = z.object({
+  dataset_id: datasetIdSchema,
+});
+
+export const FetchGeoFeaturesSchema = z.object({
+  wfs_url: z.url(),
+  typename: z.string().min(1),
+  limit: z.coerce.number().int().min(1).max(5000).default(100),
+  property_filter: z.string().optional(),
+});
