@@ -5,16 +5,46 @@ import axios, { AxiosInstance } from 'axios';
 import { DatawrapperChart, DatawrapperChartMetadata } from './types.js';
 
 export class DatawrapperClient {
-  private client: AxiosInstance;
+  private client: AxiosInstance | null = null;
+  private token: string | null = null;
 
-  constructor(apiToken: string) {
+  constructor() {}
+
+  setToken(token: string): void {
+    this.token = token;
     this.client = axios.create({
       baseURL: 'https://api.datawrapper.de/v3',
       headers: {
-        'Authorization': `Bearer ${apiToken}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
+  }
+
+  get hasToken(): boolean {
+    return this.token !== null;
+  }
+
+  private getClient(): AxiosInstance {
+    if (!this.client) {
+      throw new Error('API token not configured. Call configure_api_key first.');
+    }
+    return this.client;
+  }
+
+  async validateToken(): Promise<boolean> {
+    if (!this.client) {
+      return false;
+    }
+    try {
+      await this.client.get('/users/me');
+      return true;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        return false;
+      }
+      throw error;
+    }
   }
 
   /**
@@ -22,7 +52,7 @@ export class DatawrapperClient {
    */
   async createChart(type: string, metadata?: DatawrapperChartMetadata): Promise<DatawrapperChart> {
     try {
-      const response = await this.client.post('/charts', {
+      const response = await this.getClient().post('/charts', {
         type,
         metadata: metadata || {}
       });
@@ -43,7 +73,7 @@ export class DatawrapperClient {
    */
   async uploadData(chartId: string, data: string): Promise<void> {
     try {
-      await this.client.put(`/charts/${chartId}/data`, data, {
+      await this.getClient().put(`/charts/${chartId}/data`, data, {
         headers: {
           'Content-Type': 'text/csv'
         }
@@ -58,7 +88,7 @@ export class DatawrapperClient {
    */
   async updateMetadata(chartId: string, metadata: DatawrapperChartMetadata): Promise<DatawrapperChart> {
     try {
-      const response = await this.client.patch(`/charts/${chartId}`, {
+      const response = await this.getClient().patch(`/charts/${chartId}`, {
         metadata
       });
       return response.data;
@@ -72,7 +102,7 @@ export class DatawrapperClient {
    */
   async publishChart(chartId: string): Promise<DatawrapperChart> {
     try {
-      const response = await this.client.post(`/charts/${chartId}/publish`);
+      const response = await this.getClient().post(`/charts/${chartId}/publish`);
       return response.data;
     } catch (error: any) {
       throw new Error(`Failed to publish chart: ${error.message}`);
@@ -84,7 +114,7 @@ export class DatawrapperClient {
    */
   async getChartInfo(chartId: string): Promise<DatawrapperChart> {
     try {
-      const response = await this.client.get(`/charts/${chartId}`);
+      const response = await this.getClient().get(`/charts/${chartId}`);
       return response.data;
     } catch (error: any) {
       throw new Error(`Failed to get chart info: ${error.message}`);
@@ -118,7 +148,7 @@ export class DatawrapperClient {
    */
   async getBasemaps(): Promise<any[]> {
     try {
-      const response = await this.client.get('/basemaps');
+      const response = await this.getClient().get('/basemaps');
       return response.data;
     } catch (error: any) {
       throw new Error(`Failed to fetch basemaps: ${error.message}`);

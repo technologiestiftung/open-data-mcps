@@ -3,18 +3,15 @@
 // ABOUTME: Exposes create_visualization tool for creating charts via Datawrapper API
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
-import * as dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
 import { DatawrapperClient } from './datawrapper-client.js';
 import { ChartBuilder } from './chart-builder.js';
 import { ChartLogger } from './chart-logger.js';
-import { CreateVisualizationParams, ChartType, ChartVariant, GeoJSON, BerlinBasemap, DetectionResult } from './types.js';
+import { CreateVisualizationParams, ChartType, ChartVariant, GeoJSON, DetectionResult } from './types.js';
 import { BasemapMatcher } from './basemap-matcher.js';
 
 /**
@@ -188,6 +185,21 @@ const PUBLISH_VISUALIZATION_TOOL: Tool = {
   }
 };
 
+const CONFIGURE_API_KEY_TOOL: Tool = {
+  name: 'configure_api_key',
+  description: 'Configure your Datawrapper API token. You need to call this once per session before using create_visualization or publish_visualization. Get your token from: https://app.datawrapper.de/settings/api-tokens',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      api_key: {
+        type: 'string',
+        description: 'Your Datawrapper API token'
+      }
+    },
+    required: ['api_key']
+  }
+};
+
 export class DatawrapperMCPServer {
   private server: Server;
   private datawrapperClient: DatawrapperClient;
@@ -195,16 +207,8 @@ export class DatawrapperMCPServer {
   private chartLogger: ChartLogger;
   private basemapMatcher: BasemapMatcher;
 
-  constructor(apiToken?: string) {
-    // Load environment variables if not provided
-    dotenv.config();
-
-    const token = apiToken || process.env.DATAWRAPPER_API_TOKEN;
-    const chartLogPath = process.env.CHART_LOG_PATH || './charts-log.json';
-
-    if (!token) {
-      throw new Error('DATAWRAPPER_API_TOKEN environment variable or apiToken parameter is required');
-    }
+  constructor(chartLogPath?: string) {
+    const logPath = chartLogPath || process.env.CHART_LOG_PATH || './charts-log.json';
 
     this.server = new Server(
       {
@@ -218,25 +222,33 @@ export class DatawrapperMCPServer {
       }
     );
 
-    this.datawrapperClient = new DatawrapperClient(token);
+    this.datawrapperClient = new DatawrapperClient();
     this.chartBuilder = new ChartBuilder();
-    this.chartLogger = new ChartLogger(chartLogPath);
+    this.chartLogger = new ChartLogger(logPath);
     this.basemapMatcher = new BasemapMatcher();
 
     this.setupHandlers();
+  }
+
+  setToken(token: string): void {
+    this.datawrapperClient.setToken(token);
   }
 
   private setupHandlers() {
     // List available tools
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
-        tools: [CREATE_VISUALIZATION_TOOL, PUBLISH_VISUALIZATION_TOOL]
+        tools: [CREATE_VISUALIZATION_TOOL, PUBLISH_VISUALIZATION_TOOL, CONFIGURE_API_KEY_TOOL]
       };
     });
 
     // Handle tool execution
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
+
+      if (name === 'configure_api_key') {
+        return await this.handleConfigureApiKey(args as { api_key: string });
+      }
 
       if (name === 'create_visualization') {
         return await this.handleCreateVisualization(args as unknown as CreateVisualizationParams);
@@ -250,8 +262,45 @@ export class DatawrapperMCPServer {
     });
   }
 
+  private async handleConfigureApiKey(args: { api_key: string }) {
+    try {
+      const { api_key } = args;
+
+      if (!api_key || typeof api_key !== 'string') {
+        return {
+          content: [{ type: 'text', text: '❌ Invalid API key. Please provide a valid Datawrapper API token.' }],
+          isError: true
+        };
+      }
+
+      this.setToken(api_key);
+
+      const isValid = await this.datawrapperClient.validateToken();
+      if (!isValid) {
+        return {
+          content: [{ type: 'text', text: '❌ Invalid API token. Please check your token and try again.' }],
+          isError: true
+        };
+      }
+
+      return {
+        content: [{ type: 'text', text: '✅ API token configured successfully. You can now use create_visualization and publish_visualization.' }]
+      };
+    } catch (error: any) {
+      console.error('Error configuring API key:', error);
+      return {
+        content: [{ type: 'text', text: `❌ Failed to configure API key: ${error.message}` }],
+        isError: true
+      };
+    }
+  }
+
   private async handleCreateVisualization(params: CreateVisualizationParams) {
     try {
+      if (!this.datawrapperClient.hasToken) {
+        throw new Error('API token not configured. Please call configure_api_key first.');
+      }
+
       const { data, chart_type, variant, map_type, basemap, region_column, value_column, title, description, source_dataset_id } = params;
 
       // Validate map_type is provided for maps
@@ -573,6 +622,10 @@ ${JSON.stringify(sampleFeature, null, 2)}
 
   private async handlePublishVisualization(params: { chart_id: string }) {
     try {
+      if (!this.datawrapperClient.hasToken) {
+        throw new Error('API token not configured. Please call configure_api_key first.');
+      }
+
       const { chart_id } = params;
 
       if (!chart_id) {
@@ -632,21 +685,4 @@ ${embedCode}
   async connect(transport: any) {
     await this.server.connect(transport);
   }
-
-  async run() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    console.error('Datawrapper MCP server running on stdio');
-  }
-}
-
-// CLI entry point - only runs when executed directly, not when imported
-const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
-
-if (isMainModule) {
-  const server = new DatawrapperMCPServer();
-  server.run().catch((error) => {
-    console.error('Fatal error:', error);
-    process.exit(1);
-  });
 }

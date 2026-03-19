@@ -1,12 +1,9 @@
 // ABOUTME: Script to verify LOR values match Datawrapper basemap keys
 // ABOUTME: Run with: npm run build && node dist/tests/verify-basemap-keys.js
 
-import * as dotenv from 'dotenv';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
-
-dotenv.config();
 
 const API_TOKEN = process.env.DATAWRAPPER_API_TOKEN;
 if (!API_TOKEN) {

@@ -24,7 +24,6 @@ MCP server for creating data visualizations using the Datawrapper API. Enables a
 ### Prerequisites
 
 - Node.js 18+
-- Datawrapper API token
 
 ### Installation
 
@@ -33,31 +32,9 @@ npm install
 npm run build
 ```
 
-### Configuration
-
-1. Copy `.env.example` to `.env`:
-```bash
-cp .env.example .env
-```
-
-2. Add your Datawrapper API token to `.env`:
-```
-DATAWRAPPER_API_TOKEN=your_token_here
-```
-
-To get a Datawrapper API token:
-1. Create account at https://app.datawrapper.de/
-2. Navigate to Settings → API Tokens
-3. Create new token with permissions: `chart:read`, `chart:write`, `chart:publish`
-
 ### Running the Server
 
-**Stdio mode** (for Claude Desktop integration):
-```bash
-npm start
-```
-
-**HTTP mode** (for remote access):
+**HTTP mode only** (for remote access via Claude/ChatGPT/etc.):
 ```bash
 npm run start:http
 ```
@@ -67,35 +44,36 @@ The HTTP server exposes:
 - `/health` - Health check endpoint
 
 **Environment variables for HTTP mode:**
-- `DATAWRAPPER_API_TOKEN` (required): Your Datawrapper API token
-- `DATAWRAPPER_MCP_AUTH_TOKEN` (optional): If set, requires Bearer auth for `/mcp` endpoint
-- `PORT` (optional): Server port (default: 3002)
+- `PORT` (optional): Server port (default: 3000)
 
 **Deployed instance**: https://datawrapper-mcp.up.railway.app
 
-### Usage with Claude Desktop
+### First-Time Setup
 
-Add to your `claude_desktop_config.json`:
+Before using the MCP server, you need to configure your Datawrapper API token:
 
-```json
-{
-  "mcpServers": {
-    "datawrapper": {
-      "command": "node",
-      "args": ["/absolute/path/to/datawrapper-mcp/dist/index.js"],
-      "env": {
-        "DATAWRAPPER_API_TOKEN": "your_token_here"
-      }
-    }
-  }
-}
-```
+1. Get a Datawrapper API token:
+   - Create account at https://app.datawrapper.de/
+   - Navigate to Settings → API Tokens
+   - Create new token with permissions: `chart:read`, `chart:write`, `chart:publish`
 
-### Usage with interface-prototype
-
-The chat interface connects to datawrapper-mcp via HTTP when `DATAWRAPPER_MCP_URL` is set.
+2. When you first use the MCP server, call the `configure_api_key` tool with your token.
 
 ## MCP Tools
+
+### `configure_api_key`
+
+Configure your Datawrapper API token. **Required before using create_visualization or publish_visualization.**
+
+**Parameters**:
+- `api_key` (required): Your Datawrapper API token
+
+**Example**:
+```javascript
+{
+  api_key: "your_datawrapper_api_token_here"
+}
+```
 
 ### `create_visualization`
 
@@ -185,7 +163,7 @@ npm run build && node dist/tests/test-chart-types.js
 ```
 datawrapper-mcp/
 ├── src/
-│   ├── index.ts              # MCP server entry point
+│   ├── index.ts              # MCP server implementation
 │   ├── http-server.ts        # HTTP server for remote access
 │   ├── datawrapper-client.ts # Datawrapper API wrapper
 │   ├── chart-builder.ts      # Smart defaults engine & validation

@@ -1,12 +1,9 @@
 // ABOUTME: Integration test for choropleth map creation via Datawrapper API
 // ABOUTME: Run with: npm run build && node dist/tests/test-choropleth-integration.js
 
-import * as dotenv from 'dotenv';
 import { DatawrapperClient } from '../datawrapper-client.js';
 import { ChartBuilder } from '../chart-builder.js';
 import { BasemapMatcher } from '../basemap-matcher.js';
-
-dotenv.config();
 
 const API_TOKEN = process.env.DATAWRAPPER_API_TOKEN;
 if (!API_TOKEN) {
@@ -14,7 +11,8 @@ if (!API_TOKEN) {
   process.exit(1);
 }
 
-const client = new DatawrapperClient(API_TOKEN);
+const client = new DatawrapperClient();
+client.setToken(API_TOKEN);
 const builder = new ChartBuilder();
 const matcher = new BasemapMatcher();
 
