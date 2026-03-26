@@ -200,7 +200,7 @@ export class WebSocketHandler {
 
           // Route tool call to appropriate MCP client
           // Datawrapper tools: create_visualization, publish_visualization
-          // Berlin tools: search_datasets, fetch_dataset_data, download_dataset
+          // Berlin tools: search_datasets, fetch_dataset_data
           const isDatawrapperTool = toolName === 'create_visualization' || toolName === 'publish_visualization';
           const mcpClient = isDatawrapperTool ? this.datawrapperMcpClient : this.berlinMcpClient;
 
@@ -208,8 +208,8 @@ export class WebSocketHandler {
             throw new Error(`MCP client not available for tool: ${toolName}`);
           }
 
-          // Use extended timeout for dataset operations (5 minutes) to handle WFS datasets and browser automation
-          const timeout = (toolName === 'download_dataset' || toolName === 'fetch_dataset_data') ? 300000 : undefined;
+          // Use extended timeout for fetch_dataset_data (5 minutes) to handle WFS datasets and browser automation
+          const timeout = toolName === 'fetch_dataset_data' ? 300000 : undefined;
           const result = await mcpClient.callTool(toolName, toolArgs, timeout ? { timeout } : undefined);
 
           // Extract text from MCP result structure

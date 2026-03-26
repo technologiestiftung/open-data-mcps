@@ -319,7 +319,7 @@ export class BerlinOpenDataMCPServer {
         },
         {
           name: 'download_dataset',
-          description: 'DOWNLOAD dataset as a file to the user\'s computer. Triggers browser download dialog. Use when user wants to SAVE/DOWNLOAD the file. Supports CSV, JSON, Excel (XLS/XLSX), GeoJSON, KML, and WFS formats. WFS data is automatically converted to GeoJSON. For ZIP archives, provides direct download URL (ZIP files cannot be processed by MCP). Keywords: "herunterladen", "download", "speichern", "save", "auf meinem Computer", "als Datei". Always use this tool when user says they need the data on their computer.',
+          description: 'Get a direct download URL for a dataset. Returns the direct URL to the data file (resolves redirects). Use when user wants to download or save data. Supports CSV, JSON, Excel (XLS/XLSX), GeoJSON, KML, WFS, and ZIP formats. Keywords: "herunterladen", "download", "speichern", "save", "auf meinem Computer", "als Datei".',
           inputSchema: {
             type: 'object',
             properties: {
@@ -330,11 +330,6 @@ export class BerlinOpenDataMCPServer {
               resource_id: {
                 type: 'string',
                 description: 'Optional: specific resource ID. If not provided, uses first available data resource (CSV/JSON/Excel).',
-              },
-              format: {
-                type: 'string',
-                description: 'Output format: "csv", "json", or "geojson". Use "geojson" for geodata (WFS/GeoJSON/KML). If not specified, geodata defaults to GeoJSON, other data defaults to original format.',
-                enum: ['csv', 'json', 'geojson'],
               },
             },
             required: ['dataset_id'],
@@ -771,9 +766,9 @@ export class BerlinOpenDataMCPServer {
               }
 
               // Avoid oversized MCP responses: do not include a large full-row JSON block.
-              // Clients can use download_dataset when they need the complete file payload.
+              // Clients can use download_dataset to get a direct download link.
               responseText += `## Full data access\n\n`;
-              responseText += `For complete row-level data, use \`download_dataset\` (or fetch this resource directly): ${resource.url}\n\n`;
+              responseText += `For complete row-level data, use \`download_dataset\` to get a direct download link (or fetch this resource directly): ${resource.url}\n\n`;
 
               return {
                 content: [{ type: 'text', text: responseText }],
@@ -1029,7 +1024,7 @@ export class BerlinOpenDataMCPServer {
             if (!parsed.success) {
               return { content: [{ type: 'text', text: `❌ Validation error: ${parsed.error.message}` }] };
             }
-            const { dataset_id, resource_id, format: requestedFormat } = parsed.data;
+            const { dataset_id, resource_id } = parsed.data;
 
             // Get dataset to find resources
             const dataset = await this.api.getDataset(dataset_id);
@@ -1063,253 +1058,20 @@ export class BerlinOpenDataMCPServer {
               ) || dataset.resources[0];
             }
 
-            // Handle ZIP files - provide direct download URL
-            if (resource.format?.toUpperCase() === 'ZIP') {
-              return {
-                content: [{
-                  type: 'text',
-                  text: `📦 ZIP Archive: ${resource.name}\n\n**Direct download URL**: ${resource.url}\n\nZIP files cannot be processed through the MCP server. Please download the file directly from the URL above and extract it to access the data inside.\n\n💡 **Tip**: After extracting, you can analyze individual files from the archive by attaching them to the conversation.`,
-                }],
-              };
+            // Resolve redirect to get direct URL
+            let directUrl = resource.url;
+            try {
+              const response = await fetch(resource.url, { redirect: 'follow' });
+              directUrl = response.url;
+            } catch {
+              // Fall back to original URL if fetch fails
             }
-
-            // Fetch the data (full dataset for download)
-            const fetchedData = await this.dataFetcher.fetchResource(resource.url, resource.format, { fullData: true });
-
-            if (fetchedData.error) {
-              return {
-                content: [{
-                  type: 'text',
-                  text: `❌ Error downloading data: ${fetchedData.error}\n\nYou can try:\n- Using a different resource\n- Downloading manually from: ${resource.url}`,
-                }],
-              };
-            }
-
-            // Transform GeoJSON coordinates early if we have originalGeoJSON
-            // This ensures the preview shows transformed coordinates
-            if (fetchedData.originalGeoJSON) {
-              // Check if coordinates need transformation by looking at first coordinate
-              // WGS84: lon [-180, 180], lat [-90, 90]
-              // EPSG:25833: x ~[300000, 500000], y ~[5800000, 5900000]
-              let needsTransform = false;
-              const firstFeature = fetchedData.originalGeoJSON.features?.[0];
-              if (firstFeature?.geometry?.coordinates) {
-                const coords = firstFeature.geometry.coordinates;
-                // Get first coordinate point (handling different geometry types)
-                let firstCoord;
-                if (firstFeature.geometry.type === 'Point') {
-                  firstCoord = coords;
-                } else if (firstFeature.geometry.type === 'LineString') {
-                  firstCoord = coords[0];
-                } else if (firstFeature.geometry.type === 'Polygon') {
-                  firstCoord = coords[0][0];
-                } else if (firstFeature.geometry.type === 'MultiPolygon') {
-                  firstCoord = coords[0][0][0];
-                }
-
-                // If coordinates are outside WGS84 range, they need transformation
-                if (firstCoord && (Math.abs(firstCoord[0]) > 180 || Math.abs(firstCoord[1]) > 90)) {
-                  needsTransform = true;
-                }
-              }
-
-              let transformedGeoJSON;
-              if (needsTransform) {
-                // Berlin WFS services use EPSG:25833
-                const sourceCRS = resource.format.toUpperCase() === 'WFS' ? 'EPSG:25833' : undefined;
-                transformedGeoJSON = this.geoJSONTransformer.transformToWGS84(
-                  fetchedData.originalGeoJSON,
-                  sourceCRS
-                );
-              } else {
-                // Already in WGS84, just clean CRS property
-                transformedGeoJSON = this.geoJSONTransformer.transformToWGS84(
-                  fetchedData.originalGeoJSON
-                );
-              }
-
-              fetchedData.originalGeoJSON = transformedGeoJSON;
-
-              // Re-parse to update rows with transformed coordinates
-              const geojsonFeatures = transformedGeoJSON.type === 'FeatureCollection'
-                ? transformedGeoJSON.features
-                : [transformedGeoJSON];
-
-              const updatedRows: any[] = [];
-              const columnSet = new Set<string>(fetchedData.columns);
-
-              for (const feature of geojsonFeatures) {
-                if (feature.type !== 'Feature') continue;
-
-                const row: any = {};
-
-                // Add properties
-                if (feature.properties && typeof feature.properties === 'object') {
-                  Object.keys(feature.properties).forEach(key => {
-                    row[key] = (feature.properties as any)[key];
-                    columnSet.add(key);
-                  });
-                }
-
-                // Add geometry metadata
-                if (feature.geometry) {
-                  row['geometry_type'] = feature.geometry.type;
-                  columnSet.add('geometry_type');
-
-                  // GeometryCollection doesn't have coordinates directly
-                  const geom = feature.geometry as any;
-                  if (geom.coordinates) {
-                    row['geometry_coordinates'] = JSON.stringify(geom.coordinates);
-                    columnSet.add('geometry_coordinates');
-                  }
-                }
-
-                // Add feature ID if present
-                if (feature.id !== undefined) {
-                  row['feature_id'] = feature.id;
-                  columnSet.add('feature_id');
-                }
-
-                updatedRows.push(row);
-              }
-
-              fetchedData.rows = updatedRows;
-              fetchedData.columns = Array.from(columnSet);
-            }
-
-            // Determine output format
-            // For geodata (WFS, GeoJSON, KML), default to 'geojson' unless explicitly requested otherwise
-            let outputFormat: string;
-            if (requestedFormat) {
-              outputFormat = requestedFormat;
-            } else {
-              const resourceFormat = resource.format.toUpperCase();
-              if (resourceFormat === 'CSV') {
-                outputFormat = 'csv';
-              } else if (['WFS', 'GEOJSON', 'KML'].includes(resourceFormat)) {
-                outputFormat = 'geojson';
-              } else {
-                outputFormat = 'json';
-              }
-            }
-
-            // Generate file content
-            let fileContent: string;
-            let mimeType: string;
-            let fileExtension: string;
-
-            // Special handling for GeoJSON - use already-transformed GeoJSON
-            if (outputFormat === 'geojson' && fetchedData.originalGeoJSON) {
-              // GeoJSON already transformed to WGS84 earlier (see coordinate transformation above)
-              fileContent = JSON.stringify(fetchedData.originalGeoJSON, null, 2);
-              mimeType = 'application/geo+json';
-              fileExtension = 'geojson';
-            } else if (outputFormat === 'csv') {
-              // Convert to CSV
-              if (fetchedData.rows.length > 0) {
-                const header = fetchedData.columns.join(',') + '\n';
-                const rows = fetchedData.rows.map(row => {
-                  return fetchedData.columns.map(col => {
-                    const val = row[col];
-                    // Escape CSV values with commas or quotes
-                    if (typeof val === 'string' && (val.includes(',') || val.includes('"') || val.includes('\n'))) {
-                      return `"${val.replace(/"/g, '""')}"`;
-                    }
-                    return val ?? '';
-                  }).join(',');
-                }).join('\n');
-                fileContent = header + rows;
-              } else {
-                fileContent = fetchedData.columns.join(',');
-              }
-              mimeType = 'text/csv';
-              fileExtension = 'csv';
-            } else {
-              // JSON format
-              fileContent = JSON.stringify(fetchedData.rows, null, 2);
-              mimeType = 'application/json';
-              fileExtension = 'json';
-            }
-
-            // Helper function to transliterate German umlauts
-            const transliterateGerman = (text: string): string => {
-              return text
-                .replace(/ä/g, 'ae')
-                .replace(/ö/g, 'oe')
-                .replace(/ü/g, 'ue')
-                .replace(/ß/g, 'ss');
-            };
-
-            // Generate filename from dataset title and resource name
-            const datasetPart = transliterateGerman(dataset.title.toLowerCase())
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-+|-+$/g, '');
-
-            // Add resource name if it provides additional context
-            let safeFilename = datasetPart;
-
-            // Skip resource name for WFS resources (they typically have generic names)
-            const isWfsResource = resource.format.toUpperCase() === 'WFS';
-
-            if (!isWfsResource && resource.name && resource.name.trim() !== '') {
-              const resourceName = resource.name
-                .toLowerCase()
-                .replace(/\(csv\)|\(json\)|\(xlsx?\)|\(geojson\)/gi, '') // Remove format indicators
-                .trim();
-
-              if (resourceName !== '' && resourceName !== dataset.title.toLowerCase()) {
-                const resourcePart = transliterateGerman(resourceName)
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/^-+|-+$/g, '');
-
-                // Extract tokens from both parts to find unique resource tokens
-                const datasetTokens = new Set(datasetPart.split('-').filter(t => t.length > 2));
-                const resourceTokens = resourcePart.split('-').filter(t => t.length > 0);
-
-                // Keep only resource tokens that add new information
-                const uniqueTokens = resourceTokens.filter(token =>
-                  !datasetTokens.has(token) || token.length <= 2
-                );
-
-                if (uniqueTokens.length > 0) {
-                  safeFilename = `${datasetPart}-${uniqueTokens.join('-')}`;
-                }
-              }
-            }
-
-            safeFilename = safeFilename.substring(0, 100);
-            const filename = `${safeFilename}.${fileExtension}`;
-
-            const fileSizeKB = (fileContent.length / 1024).toFixed(2);
-
-            // Return with special marker for download
-            let responseText = `✅ **Download ready!**\n\n`;
-            responseText += `**Dataset:** ${dataset.title}\n`;
-            responseText += `**Format:** ${outputFormat.toUpperCase()}\n`;
-            responseText += `**Size:** ${fileSizeKB} KB\n`;
-            responseText += `**Rows:** ${fetchedData.rows.length}`;
-
-            // Add WFS-specific information about feature limits
-            if (isWfsResource && fetchedData.totalRows > 5000) {
-              responseText += ` (of ${fetchedData.totalRows.toLocaleString()} total features)\n`;
-              responseText += `\n⚠️ **Note:** Due to browser resource limitations, only 5,000 features are included in this download.\n`;
-              responseText += `For the complete dataset, use the [WFS Explorer](https://wfsexplorer.odis-berlin.de/?wfs=${encodeURIComponent(resource.url.split('?')[0])}).\n`;
-            } else {
-              responseText += `\n`;
-            }
-
-            responseText += `**Columns:** ${fetchedData.columns.length}\n\n`;
-
-            // Show first row preview
-            if (fetchedData.rows.length > 0) {
-              responseText += `**First row:**\n\`\`\`json\n${JSON.stringify(fetchedData.rows[0], null, 2)}\n\`\`\`\n\n`;
-            }
-
-            responseText += `[DOWNLOAD:${filename}:${mimeType}]\n`;
-            responseText += fileContent;
 
             return {
-              content: [{ type: 'text', text: responseText }],
+              content: [{
+                type: 'text',
+                text: `📥 **Download Link**\n\n${directUrl}\n\nClick the link above to download the dataset.`,
+              }],
             };
           }
 
@@ -1492,7 +1254,7 @@ export class BerlinOpenDataMCPServer {
               responseText += `No features found matching the criteria.\n`;
             }
 
-            responseText += `\n**Note**: For larger datasets or full analysis, use \`download_dataset\` to get the complete GeoJSON.`;
+            responseText += `\n**Note**: For larger datasets or full analysis, use \`download_dataset\` to get a direct download link.`;
 
             return {
               content: [{ type: 'text', text: responseText }],
