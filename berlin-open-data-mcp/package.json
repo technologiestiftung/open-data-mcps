@@ -11,8 +11,8 @@
     "dev": "tsx src/index.ts",
     "dev:http": "tsx src/http-server.ts",
     "dev:browser": "tsx src/browser-fetcher.ts",
-    "test": "vitest run --reporter=verbose src/tests/query-processor.test.ts",
-    "test:watch": "vitest src/tests/query-processor.test.ts",
+    "test": "vitest run --reporter=verbose src/tests/ --exclude=search.integration.test.ts",
+    "test:watch": "vitest src/tests/ --exclude=search.integration.test.ts",
     "test:integration": "vitest run --reporter=verbose src/tests/search.integration.test.ts"
   },
   "dependencies": {
@@ -22,12 +22,12 @@
     "@xmldom/xmldom": "^0.8.11",
     "axios": "^1.12.2",
     "dotenv": "^17.2.3",
-    "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "node-fetch": "^3.3.2",
     "papaparse": "^5.5.3",
     "proj4": "^2.20.2",
     "puppeteer": "^24.26.1",
+    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {

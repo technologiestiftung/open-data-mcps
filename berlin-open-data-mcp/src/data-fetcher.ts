@@ -3,7 +3,7 @@
 
 import fetch from 'node-fetch';
 import Papa from 'papaparse';
-import ExcelJS from 'exceljs';
+import * as XLSX from 'xlsx';
 import { BrowserFetcher } from './browser-fetcher.js';
 import { DOMParser } from '@xmldom/xmldom';
 import * as toGeoJSON from '@tmcw/togeojson';
@@ -428,23 +428,39 @@ export class DataFetcher {
 
   private async parseExcel(buffer: Buffer, format: string): Promise<FetchedData> {
     try {
-      const workbook = new ExcelJS.Workbook();
-
+      let workbook;
       try {
-        const ab = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-        await workbook.xlsx.load(ab as ArrayBuffer);
-      } catch {
+        workbook = XLSX.read(buffer, { type: 'buffer' });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes('password') || message.includes('encrypted')) {
+          return {
+            format,
+            rows: [],
+            totalRows: 0,
+            columns: [],
+            error: 'Excel file is password protected and cannot be read',
+          };
+        }
+        if (message.includes('XLS') || message.includes('BIFF')) {
+          return {
+            format,
+            rows: [],
+            totalRows: 0,
+            columns: [],
+            error: 'Could not parse Excel file — old .xls binary format is not supported. Please use the CSV version of this dataset if available.',
+          };
+        }
         return {
           format,
           rows: [],
           totalRows: 0,
           columns: [],
-          error: 'Could not parse Excel file — old .xls binary format is not supported. Please use the CSV version of this dataset if available.',
+          error: `Could not parse Excel file — possibly corrupted: ${message}`,
         };
       }
 
-      const worksheet = workbook.worksheets[0];
-      if (!worksheet) {
+      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
         return {
           format,
           rows: [],
@@ -454,10 +470,23 @@ export class DataFetcher {
         };
       }
 
-      // Row values are 1-indexed; index 0 is always undefined in ExcelJS
-      const headerValues = worksheet.getRow(1).values as (ExcelJS.CellValue | undefined)[];
-      const headers = headerValues.slice(1).map(v => String(v ?? ''));
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      
+      if (!data || data.length === 0) {
+        return {
+          format,
+          rows: [],
+          totalRows: 0,
+          columns: [],
+          error: 'Excel file appears to be empty or has no headers',
+        };
+      }
 
+      const headers = data[0].map(h => String(h ?? ''));
+      
       if (headers.length === 0) {
         return {
           format,
@@ -469,15 +498,15 @@ export class DataFetcher {
       }
 
       const rows: any[] = [];
-      worksheet.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) return;
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (!row) continue;
         const rowObj: any = {};
         headers.forEach((header, idx) => {
-          const cell = row.getCell(idx + 1);
-          rowObj[header] = cell.value;
+          rowObj[header] = row[idx];
         });
         rows.push(rowObj);
-      });
+      }
 
       if (rows.length === 0) {
         return {
