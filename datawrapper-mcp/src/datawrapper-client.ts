@@ -37,7 +37,7 @@ export class DatawrapperClient {
       return false;
     }
     try {
-      await this.client.get('/users/me');
+      await this.client.get('/me');
       return true;
     } catch (error: any) {
       if (error.response?.status === 401) {
