@@ -124,8 +124,30 @@ const CREATE_VISUALIZATION_TOOL: Tool = {
             type: 'object',
             properties: {
               type: { type: 'string', enum: ['FeatureCollection'] },
-              features: { type: 'array' }
-            }
+              features: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    type: { type: 'string', enum: ['Feature'] },
+                    geometry: {
+                      type: 'object',
+                      properties: {
+                        type: { type: 'string' },
+                        coordinates: {}
+                      },
+                      required: ['type', 'coordinates']
+                    },
+                    properties: {
+                      type: 'object',
+                      additionalProperties: true
+                    }
+                  },
+                  required: ['type', 'geometry']
+                }
+              }
+            },
+            required: ['type', 'features']
           }
         ]
       },
