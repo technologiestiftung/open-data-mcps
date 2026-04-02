@@ -8,7 +8,11 @@ export class DatawrapperClient {
   private client: AxiosInstance | null = null;
   private token: string | null = null;
 
-  constructor() {}
+  constructor(token?: string) {
+    if (token) {
+      this.setToken(token);
+    }
+  }
 
   setToken(token: string): void {
     this.token = token;
@@ -27,7 +31,7 @@ export class DatawrapperClient {
 
   private getClient(): AxiosInstance {
     if (!this.client) {
-      throw new Error('API token not configured. Call configure_api_key first.');
+      throw new Error('API token missing for this request.');
     }
     return this.client;
   }

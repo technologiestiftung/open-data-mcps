@@ -48,38 +48,25 @@ The HTTP server exposes:
 
 **Deployed instance**: https://datawrapper-mcp.up.railway.app
 
-### First-Time Setup
+### Authentication
 
-Before using the MCP server, you need to configure your Datawrapper API token:
+This MCP server is stateless. Pass your Datawrapper API token as `api_key` on every `create_visualization` and `publish_visualization` call.
+
+To get a Datawrapper API token:
 
 1. Get a Datawrapper API token:
    - Create account at https://app.datawrapper.de/
    - Navigate to Settings → API Tokens
    - Create new token with permissions: `chart:read`, `chart:write`, `chart:publish`
 
-2. When you first use the MCP server, call the `configure_api_key` tool with your token.
-
 ## MCP Tools
-
-### `configure_api_key`
-
-Configure your Datawrapper API token. **Required before using create_visualization or publish_visualization.**
-
-**Parameters**:
-- `api_key` (required): Your Datawrapper API token
-
-**Example**:
-```javascript
-{
-  api_key: "your_datawrapper_api_token_here"
-}
-```
 
 ### `create_visualization`
 
 Create a data visualization using Datawrapper.
 
 **Parameters**:
+- `api_key` (required): Your Datawrapper API token
 - `data` (required): Array of objects or GeoJSON FeatureCollection
 - `chart_type` (required): Type of visualization (see below)
 - `variant` (optional): Chart variant for bar/column charts
@@ -111,6 +98,7 @@ Create a data visualization using Datawrapper.
 ```javascript
 // Basic bar chart
 {
+  api_key: "your_datawrapper_api_token_here",
   data: [
     { district: "Mitte", population: 380000 },
     { district: "Pankow", population: 410000 }
@@ -121,6 +109,7 @@ Create a data visualization using Datawrapper.
 
 // Stacked column chart
 {
+  api_key: "your_datawrapper_api_token_here",
   data: [
     { year: "2020", online: 45, offline: 30 },
     { year: "2021", online: 55, offline: 25 }
@@ -131,6 +120,7 @@ Create a data visualization using Datawrapper.
 
 // Range plot (shows salary gap)
 {
+  api_key: "your_datawrapper_api_token_here",
   data: [
     { category: "Berlin", Women: 52000, Men: 61000 },
     { category: "Munich", Women: 48000, Men: 58000 }
@@ -140,6 +130,7 @@ Create a data visualization using Datawrapper.
 
 // Scatter plot
 {
+  api_key: "your_datawrapper_api_token_here",
   data: [
     { city: "Berlin", population: 3.6, area: 891 },
     { city: "Munich", population: 1.5, area: 310 }
@@ -147,6 +138,14 @@ Create a data visualization using Datawrapper.
   chart_type: "scatter"
 }
 ```
+
+### `publish_visualization`
+
+Publish a previously created chart.
+
+**Parameters**:
+- `api_key` (required): Your Datawrapper API token
+- `chart_id` (required): The chart ID returned from `create_visualization`
 
 ## Testing
 

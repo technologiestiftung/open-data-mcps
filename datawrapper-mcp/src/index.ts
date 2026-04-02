@@ -11,7 +11,7 @@ import {
 import { DatawrapperClient } from './datawrapper-client.js';
 import { ChartBuilder } from './chart-builder.js';
 import { ChartLogger } from './chart-logger.js';
-import { CreateVisualizationParams, ChartType, ChartVariant, GeoJSON, DetectionResult } from './types.js';
+import { CreateVisualizationParams, PublishVisualizationParams, ChartType, ChartVariant, GeoJSON, DetectionResult } from './types.js';
 import { BasemapMatcher } from './basemap-matcher.js';
 
 /**
@@ -103,10 +103,14 @@ Found columns: ${Object.keys(detection.totalRows > 0 ? {} : {}).join(', ') || 'n
 // Tool definitions
 const CREATE_VISUALIZATION_TOOL: Tool = {
   name: 'create_visualization',
-  description: 'Create a data visualization using the Datawrapper API. The chart is NOT published automatically - use `publish_visualization` after the user approves it. Supports bar, column, line, area, scatter, dot, range, arrow, pie, donut, election-donut, table, and map charts. Use "variant" for bar (basic/stacked/split) and column (basic/grouped/stacked) charts. **For maps, map_type is REQUIRED**: "d3-maps-symbols" (points with GeoJSON) or "d3-maps-choropleth" (regions with tabular data). **For choropleth maps**: provide tabular data with Berlin region identifiers (Bezirke, Prognoseräume, Bezirksregionen, or Planungsräume). If basemap is not specified, the tool will auto-detect and return available options. Returns an edit URL where the user can preview and adjust the chart before publishing.',
+  description: 'Create a data visualization using the Datawrapper API. Pass `api_key` with every request; the server is stateless and does not persist tokens between tool calls. The chart is NOT published automatically - use `publish_visualization` after the user approves it. Supports bar, column, line, area, scatter, dot, range, arrow, pie, donut, election-donut, table, and map charts. Use "variant" for bar (basic/stacked/split) and column (basic/grouped/stacked) charts. **For maps, map_type is REQUIRED**: "d3-maps-symbols" (points with GeoJSON) or "d3-maps-choropleth" (regions with tabular data). **For choropleth maps**: provide tabular data with Berlin region identifiers (Bezirke, Prognoseräume, Bezirksregionen, or Planungsräume). If basemap is not specified, the tool will auto-detect and return available options. Returns an edit URL where the user can preview and adjust the chart before publishing.',
   inputSchema: {
     type: 'object',
     properties: {
+      api_key: {
+        type: 'string',
+        description: 'Your Datawrapper API token. Required on every request because this MCP server is stateless.'
+      },
       data: {
         description: 'Array of data objects. For choropleth maps: tabular data with region IDs/names. For symbol maps: GeoJSON FeatureCollection.',
         oneOf: [
@@ -166,43 +170,31 @@ const CREATE_VISUALIZATION_TOOL: Tool = {
         description: 'Optional Berlin dataset ID for tracking'
       }
     },
-    required: ['data', 'chart_type']
+    required: ['api_key', 'data', 'chart_type']
   }
 };
 
 const PUBLISH_VISUALIZATION_TOOL: Tool = {
   name: 'publish_visualization',
-  description: 'Publish a previously created visualization to make it publicly viewable. Use this after the user has reviewed and approved the chart in the Datawrapper editor.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      chart_id: {
-        type: 'string',
-        description: 'The chart ID returned from create_visualization'
-      }
-    },
-    required: ['chart_id']
-  }
-};
-
-const CONFIGURE_API_KEY_TOOL: Tool = {
-  name: 'configure_api_key',
-  description: 'Configure your Datawrapper API token. You need to call this once per session before using create_visualization or publish_visualization. Get your token from: https://app.datawrapper.de/settings/api-tokens',
+  description: 'Publish a previously created visualization to make it publicly viewable. Pass `api_key` with every request because this MCP server is stateless. Use this after the user has reviewed and approved the chart in the Datawrapper editor.',
   inputSchema: {
     type: 'object',
     properties: {
       api_key: {
         type: 'string',
-        description: 'Your Datawrapper API token'
+        description: 'Your Datawrapper API token. Required on every request because this MCP server is stateless.'
+      },
+      chart_id: {
+        type: 'string',
+        description: 'The chart ID returned from create_visualization'
       }
     },
-    required: ['api_key']
+    required: ['api_key', 'chart_id']
   }
 };
 
 export class DatawrapperMCPServer {
   private server: Server;
-  private datawrapperClient: DatawrapperClient;
   private chartBuilder: ChartBuilder;
   private chartLogger: ChartLogger;
   private basemapMatcher: BasemapMatcher;
@@ -222,7 +214,6 @@ export class DatawrapperMCPServer {
       }
     );
 
-    this.datawrapperClient = new DatawrapperClient();
     this.chartBuilder = new ChartBuilder();
     this.chartLogger = new ChartLogger(logPath);
     this.basemapMatcher = new BasemapMatcher();
@@ -230,15 +221,19 @@ export class DatawrapperMCPServer {
     this.setupHandlers();
   }
 
-  setToken(token: string): void {
-    this.datawrapperClient.setToken(token);
+  private getAuthenticatedClient(apiKey: string): DatawrapperClient {
+    if (!apiKey || typeof apiKey !== 'string') {
+      throw new Error('api_key is required');
+    }
+
+    return new DatawrapperClient(apiKey);
   }
 
   private setupHandlers() {
     // List available tools
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
-        tools: [CREATE_VISUALIZATION_TOOL, PUBLISH_VISUALIZATION_TOOL, CONFIGURE_API_KEY_TOOL]
+        tools: [CREATE_VISUALIZATION_TOOL, PUBLISH_VISUALIZATION_TOOL]
       };
     });
 
@@ -246,62 +241,22 @@ export class DatawrapperMCPServer {
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
-      if (name === 'configure_api_key') {
-        return await this.handleConfigureApiKey(args as { api_key: string });
-      }
-
       if (name === 'create_visualization') {
         return await this.handleCreateVisualization(args as unknown as CreateVisualizationParams);
       }
 
       if (name === 'publish_visualization') {
-        return await this.handlePublishVisualization(args as { chart_id: string });
+        return await this.handlePublishVisualization(args as unknown as PublishVisualizationParams);
       }
 
       throw new Error(`Unknown tool: ${name}`);
     });
   }
 
-  private async handleConfigureApiKey(args: { api_key: string }) {
-    try {
-      const { api_key } = args;
-
-      if (!api_key || typeof api_key !== 'string') {
-        return {
-          content: [{ type: 'text', text: '❌ Invalid API key. Please provide a valid Datawrapper API token.' }],
-          isError: true
-        };
-      }
-
-      this.setToken(api_key);
-
-      const isValid = await this.datawrapperClient.validateToken();
-      if (!isValid) {
-        return {
-          content: [{ type: 'text', text: '❌ Invalid API token. Please check your token and try again.' }],
-          isError: true
-        };
-      }
-
-      return {
-        content: [{ type: 'text', text: '✅ API token configured successfully. You can now use create_visualization and publish_visualization.' }]
-      };
-    } catch (error: any) {
-      console.error('Error configuring API key:', error);
-      return {
-        content: [{ type: 'text', text: `❌ Failed to configure API key: ${error.message}` }],
-        isError: true
-      };
-    }
-  }
-
   private async handleCreateVisualization(params: CreateVisualizationParams) {
     try {
-      if (!this.datawrapperClient.hasToken) {
-        throw new Error('API token not configured. Please call configure_api_key first.');
-      }
-
-      const { data, chart_type, variant, map_type, basemap, region_column, value_column, title, description, source_dataset_id } = params;
+      const { api_key, data, chart_type, variant, map_type, title, description, source_dataset_id } = params;
+      const datawrapperClient = this.getAuthenticatedClient(api_key);
 
       // Validate map_type is provided for maps
       if (chart_type === 'map' && !map_type) {
@@ -310,7 +265,7 @@ export class DatawrapperMCPServer {
 
       // Handle choropleth maps separately
       if (chart_type === 'map' && map_type === 'd3-maps-choropleth') {
-        return await this.handleChoroplethMap(params);
+        return await this.handleChoroplethMap(datawrapperClient, params);
       }
 
       // Validate data structure for the chart type
@@ -390,7 +345,7 @@ export class DatawrapperMCPServer {
       const variantLabel = variant && variant !== 'basic' ? ` (${variant})` : '';
       const chartTypeLabel = chart_type === 'map' ? `${map_type} map` : `${chart_type}${variantLabel} chart`;
       console.error(`Creating ${chartTypeLabel}...`);
-      const chart = await this.datawrapperClient.createChart(dwChartType, metadata);
+      const chart = await datawrapperClient.createChart(dwChartType, metadata);
 
       // Prepare and upload data
       let dataString: string;
@@ -415,10 +370,10 @@ export class DatawrapperMCPServer {
       }
 
       console.error(`Uploading data (${rowCount} rows)...`);
-      await this.datawrapperClient.uploadData(chart.id, dataString);
+      await datawrapperClient.uploadData(chart.id, dataString);
 
       // Get edit URL (chart is not published yet)
-      const editUrl = this.datawrapperClient.getEditUrl(chart.id);
+      const editUrl = datawrapperClient.getEditUrl(chart.id);
 
       // Log chart creation asynchronously
       this.chartLogger.logChart({
@@ -475,7 +430,7 @@ ${JSON.stringify(sampleFeature, null, 2)}
     }
   }
 
-  private async handleChoroplethMap(params: CreateVisualizationParams) {
+  private async handleChoroplethMap(datawrapperClient: DatawrapperClient, params: CreateVisualizationParams) {
     const { data, basemap, region_column, value_column, title, description, source_dataset_id } = params;
 
     // Choropleth maps require tabular data, not GeoJSON
@@ -574,15 +529,15 @@ ${JSON.stringify(sampleFeature, null, 2)}
 
     // Create chart
     console.error(`Creating choropleth map with ${basemap}...`);
-    const chart = await this.datawrapperClient.createChart('d3-maps-choropleth', metadata);
+    const chart = await datawrapperClient.createChart('d3-maps-choropleth', metadata);
 
     // Convert data to CSV and upload
     const csvData = this.chartBuilder.formatForDatawrapper(processedData);
     console.error(`Uploading data (${processedData.length} rows)...`);
-    await this.datawrapperClient.uploadData(chart.id, csvData);
+    await datawrapperClient.uploadData(chart.id, csvData);
 
     // Get edit URL (chart is not published yet)
-    const editUrl = this.datawrapperClient.getEditUrl(chart.id);
+    const editUrl = datawrapperClient.getEditUrl(chart.id);
 
     // Log chart creation
     this.chartLogger.logChart({
@@ -620,25 +575,22 @@ ${JSON.stringify(sampleFeature, null, 2)}
     };
   }
 
-  private async handlePublishVisualization(params: { chart_id: string }) {
+  private async handlePublishVisualization(params: PublishVisualizationParams) {
     try {
-      if (!this.datawrapperClient.hasToken) {
-        throw new Error('API token not configured. Please call configure_api_key first.');
-      }
-
-      const { chart_id } = params;
+      const { api_key, chart_id } = params;
+      const datawrapperClient = this.getAuthenticatedClient(api_key);
 
       if (!chart_id) {
         throw new Error('chart_id is required');
       }
 
       console.error(`Publishing chart ${chart_id}...`);
-      const publishedChart = await this.datawrapperClient.publishChart(chart_id);
+      const publishedChart = await datawrapperClient.publishChart(chart_id);
 
       const publicId = publishedChart.publicId || chart_id;
-      const publicUrl = this.datawrapperClient.getPublicUrl(publicId);
-      const editUrl = this.datawrapperClient.getEditUrl(chart_id);
-      const embedCode = this.datawrapperClient.getEmbedCode(publicId);
+      const publicUrl = datawrapperClient.getPublicUrl(publicId);
+      const editUrl = datawrapperClient.getEditUrl(chart_id);
+      const embedCode = datawrapperClient.getEmbedCode(publicId);
 
       // Update log entry with published info
       this.chartLogger.logChart({

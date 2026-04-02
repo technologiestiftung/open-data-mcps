@@ -48,6 +48,7 @@ export interface DetectionResult {
 }
 
 export interface CreateVisualizationParams {
+  api_key: string;
   data: Array<Record<string, any>> | GeoJSON;
   chart_type: ChartType;
   variant?: ChartVariant;
@@ -58,6 +59,11 @@ export interface CreateVisualizationParams {
   title?: string;
   description?: string;
   source_dataset_id?: string;
+}
+
+export interface PublishVisualizationParams {
+  api_key: string;
+  chart_id: string;
 }
 
 export interface ValidationResult {
