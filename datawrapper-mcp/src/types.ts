@@ -56,6 +56,10 @@ export interface CreateVisualizationParams {
   basemap?: BerlinBasemap;
   region_column?: string;
   value_column?: string;
+  base_color?: string;
+  thick?: boolean;
+  value_label_format?: string;
+  visualize_overrides?: Record<string, any>;
   title?: string;
   description?: string;
   source_dataset_id?: string;

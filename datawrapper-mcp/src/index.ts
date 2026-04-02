@@ -157,6 +157,22 @@ const CREATE_VISUALIZATION_TOOL: Tool = {
         type: 'string',
         description: 'For choropleth maps: column name containing values to visualize. Auto-detected if omitted.'
       },
+      base_color: {
+        type: 'string',
+        description: 'Optional base color for the chart, for example "#E63946".'
+      },
+      thick: {
+        type: 'boolean',
+        description: 'Optional Datawrapper thickness toggle for supported chart types.'
+      },
+      value_label_format: {
+        type: 'string',
+        description: 'Optional Datawrapper number format for value labels, for example "0,0.[00]" or "0.0%".'
+      },
+      visualize_overrides: {
+        type: 'object',
+        description: 'Optional advanced Datawrapper visualize metadata overrides. Use this for additional styling beyond base_color.'
+      },
       title: {
         type: 'string',
         description: 'Optional chart title (auto-generated if omitted)'
@@ -255,7 +271,7 @@ export class DatawrapperMCPServer {
 
   private async handleCreateVisualization(params: CreateVisualizationParams) {
     try {
-      const { api_key, data, chart_type, variant, map_type, title, description, source_dataset_id } = params;
+      const { api_key, data, chart_type, variant, map_type, base_color, thick, value_label_format, visualize_overrides, title, description, source_dataset_id } = params;
       const datawrapperClient = this.getAuthenticatedClient(api_key);
 
       // Validate map_type is provided for maps
@@ -291,10 +307,11 @@ export class DatawrapperMCPServer {
       // Create initial chart metadata with clean, modern styling
       const metadata: any = {
         visualize: {
-          'base-color': '#2A7FFF',
-          'thick': false,
-          'value-label-format': '0,0.[00]',
+          'base-color': base_color || '#2A7FFF',
+          'thick': thick ?? false,
+          'value-label-format': value_label_format || '0,0.[00]',
           ...typeSpecificSettings,
+          ...(visualize_overrides || {}),
         },
         publish: chart_type === 'map' ? {
           'embed-width': 600,
@@ -431,7 +448,7 @@ ${JSON.stringify(sampleFeature, null, 2)}
   }
 
   private async handleChoroplethMap(datawrapperClient: DatawrapperClient, params: CreateVisualizationParams) {
-    const { data, basemap, region_column, value_column, title, description, source_dataset_id } = params;
+    const { data, basemap, region_column, value_column, base_color, thick, value_label_format, visualize_overrides, title, description, source_dataset_id } = params;
 
     // Choropleth maps require tabular data, not GeoJSON
     if (!Array.isArray(data)) {
@@ -497,6 +514,10 @@ ${JSON.stringify(sampleFeature, null, 2)}
         headline: chartTitle,
       },
       visualize: {
+        'base-color': base_color || '#2A7FFF',
+        'thick': thick ?? false,
+        'value-label-format': value_label_format || '0,0.[00]',
+        ...(visualize_overrides || {}),
         basemap: basemap,
         'map-key-attr': keyAttr,
         tooltip: {

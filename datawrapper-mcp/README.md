@@ -71,6 +71,10 @@ Create a data visualization using Datawrapper.
 - `chart_type` (required): Type of visualization (see below)
 - `variant` (optional): Chart variant for bar/column charts
 - `map_type` (required for maps): `'d3-maps-symbols'` or `'d3-maps-choropleth'`
+- `base_color` (optional): Base color like `"#E63946"`
+- `thick` (optional): Datawrapper thickness toggle for supported chart types
+- `value_label_format` (optional): Datawrapper value label format like `"0,0.[00]"` or `"0.0%"`
+- `visualize_overrides` (optional): Advanced Datawrapper `metadata.visualize` overrides
 - `title` (optional): Chart title (auto-generated if omitted)
 - `description` (optional): Chart description/byline
 - `source_dataset_id` (optional): Berlin dataset ID for tracking
@@ -104,6 +108,9 @@ Create a data visualization using Datawrapper.
     { district: "Pankow", population: 410000 }
   ],
   chart_type: "bar",
+  base_color: "#E63946",
+  thick: true,
+  value_label_format: "0,0",
   title: "Population by District"
 }
 
@@ -115,7 +122,10 @@ Create a data visualization using Datawrapper.
     { year: "2021", online: 55, offline: 25 }
   ],
   chart_type: "column",
-  variant: "stacked"
+  variant: "stacked",
+  visualize_overrides: {
+    "show-color-key": true
+  }
 }
 
 // Range plot (shows salary gap)
