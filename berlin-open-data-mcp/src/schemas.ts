@@ -67,7 +67,7 @@ export const AggregateDatasetSchema = z.object({
   metrics: z.array(MetricSchema).min(1),
   filters: z.array(FilterSchema).default([]),
   sort: z.array(SortSchema).default([]),
-  limit: z.coerce.number().int().min(1).max(1000).default(100),
+  limit: z.coerce.number().int().min(1).max(1000).default(1000),
 })
 
 export const DownloadDatasetSchema = z.object({

@@ -310,8 +310,8 @@ export class BerlinOpenDataMCPServer {
               },
               limit: {
                 type: 'number',
-                description: 'Maximum number of aggregated rows to return (default: 100, max: 1000).',
-                default: 100,
+                description: 'Maximum number of aggregated rows to return (default: 1000, max: 1000).',
+                default: 1000,
               },
             },
             required: ['dataset_id', 'metrics'],
@@ -817,7 +817,7 @@ export class BerlinOpenDataMCPServer {
               metrics,
               filters = [],
               sort = [],
-              limit = 100,
+              limit = 1000,
             } = parsed.data;
 
             const dataset = await this.api.getDataset(dataset_id);
