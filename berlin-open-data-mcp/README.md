@@ -20,8 +20,6 @@ A Model Context Protocol (MCP) server for natural language discovery of Berlin's
 - 🔗 **Direct API Integration**: Connects to Berlin's official CKAN-based data portal
 - 🤖 **Standalone Operation**: Works with any MCP client (Claude.ai, Le Chat, Claude Desktop) without additional infrastructure
 
-**Total Portal Coverage**: 1,709 datasets (64.2% of portal)
-
 ## Installation
 
 ```bash

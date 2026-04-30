@@ -4,18 +4,19 @@ MCP server for creating data visualizations using the Datawrapper API. Enables a
 
 ## Features
 
-- **Bar Charts**: Horizontal bars with variants (basic, stacked, split)
-- **Column Charts**: Vertical columns with variants (basic, grouped, stacked)
-- **Line Charts**: Single and multi-series line charts for time-series data
-- **Area Charts**: Filled area charts
-- **Scatter Plots**: X/Y scatter plots for correlation analysis
-- **Dot Plots**: Horizontal dot plots with legend
-- **Range Plots**: Show min/max ranges with labeled endpoints
-- **Arrow Plots**: Show change direction between two values
-- **Pie & Donut Charts**: Part-to-whole visualizations
-- **Election Donuts**: Parliament-style seat distribution charts
-- **Tables**: Formatted data tables
-- **Maps**: GeoJSON visualization (symbol maps, choropleth)
+- 📈 **Visualizing data**:
+  - **Bar Charts**: Horizontal bars with variants (basic, stacked, split)
+  - **Column Charts**: Vertical columns with variants (basic, grouped, stacked)
+  - **Line Charts**: Single and multi-series line charts for time-series data
+  - **Area Charts**: Filled area charts
+  - **Scatter Plots**: X/Y scatter plots for correlation analysis
+  - **Dot Plots**: Horizontal dot plots with legend
+  - **Range Plots**: Show min/max ranges with labeled endpoints
+  - **Arrow Plots**: Show change direction between two values
+  - **Pie & Donut Charts**: Part-to-whole visualizations
+  - **Election Donuts**: Parliament-style seat distribution charts
+  - **Tables**: Formatted data tables
+  - **Maps**: GeoJSON visualization (symbol maps, choropleth)
 - **Smart Defaults**: Automatic titles, labels, and axes from data structure
 - **Provenance Tracking**: JSON log of created charts with source dataset links
 

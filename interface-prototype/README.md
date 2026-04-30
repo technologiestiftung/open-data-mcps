@@ -80,7 +80,7 @@ The interface shows real-time tool execution to give users visibility into the a
 **1. Intro text** (if provided by the AI)
 - Natural language explanation of what the AI is about to do
 - Example: "Let me search for traffic datasets..."
-- Streams immediately when Claude responds
+- Streams immediately when Mistral responds
 
 **2. Tool activity** (during and after execution)
 - **During**: Active tools display with spinner: "Searching Berlin Datasets..."
@@ -141,7 +141,6 @@ npm test
 | `PORT` | No | Backend port (default: 3000) |
 | `BOD_MCP_URL` | No | URL to remote Berlin Open Data MCP (e.g., `https://bod-mcp.up.railway.app`) |
 | `DATAWRAPPER_MCP_URL` | No | URL to remote Datawrapper MCP |
-| `DATAWRAPPER_MCP_AUTH_TOKEN` | No | Auth token if Datawrapper MCP requires it |
 | `BERLIN_MCP_PATH` | No | Path to local Berlin MCP server (auto-detected if not set) |
 
 When `BOD_MCP_URL` is set, the backend connects to the remote MCP server via HTTP instead of spawning a local process.
