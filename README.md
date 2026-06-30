@@ -219,7 +219,6 @@ Add to your User Settings or `.vscode/settings.json`:
     2. Click **+** (or "Apps"/"Connectors").
     3. Enable the **Berlin Open Data MCP** and/or **Datawrapper MCP** connectors.
     
-    ![ChatGPT Dev Mode](media/dev-mode.png)
     
 - What data sources does the AI agent draw on?
     
