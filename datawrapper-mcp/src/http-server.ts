@@ -45,7 +45,7 @@ async function main() {
           });
           return;
         }
-      } else if ((req.method === 'POST' && isInitializeRequest(req.body)) || req.method === 'GET') {
+      } else if (req.method === 'POST' && isInitializeRequest(req.body)) {
         const newTransport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
           enableJsonResponse: true,

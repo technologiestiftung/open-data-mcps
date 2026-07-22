@@ -49,7 +49,7 @@ async function main() {
             });
             return;
           }
-        } else if ((req.method === 'POST' && isInitializeRequest(req.body)) || req.method === 'GET') {
+        } else if (req.method === 'POST' && isInitializeRequest(req.body)) {
           // Create new session (handles both fresh connections and stale session IDs)
           const sessionCache = new Map<string, any[]>();
           let sessionId: string | undefined;
