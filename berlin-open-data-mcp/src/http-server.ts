@@ -29,15 +29,9 @@ async function main() {
 
     // MCP endpoint
     app.all('/mcp', async (req, res) => {
-      // Reject ALL GET requests immediately — forces POST-only JSON mode
-      if (req.method === 'GET') {
-        res.status(405).json({
-          jsonrpc: '2.0',
-          error: { code: -32601, message: 'Method Not Allowed' },
-          id: null,
-        });
-        return;
-      }
+      res.setHeader('X-Accel-Buffering', 'no');
+      res.setHeader('Cache-Control', 'no-cache, no-transform');
+      res.setHeader('Connection', 'keep-alive');
       console.log(`Received ${req.method} request to /mcp`);
   
       try {
@@ -46,7 +40,7 @@ async function main() {
   
         if (sessionId && transports[sessionId]) {
           transport = transports[sessionId];
-        } else if (req.method === 'POST' && isInitializeRequest(req.body)) {
+        } else if ((req.method === 'POST' && isInitializeRequest(req.body)) || req.method === 'GET') {
           // Create new session (handles both fresh connections and stale session IDs)
           const sessionCache = new Map<string, any[]>();
           let sessionId: string | undefined;
