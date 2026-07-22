@@ -781,24 +781,30 @@ export class BerlinOpenDataMCPServer {
               fetchedData.columns
             );
 
-            responseText += `Dataset has ${totalRows} rows. This is a **${sizeLabel} dataset**.\n\n`;
-            responseText += `## ⚠️ LARGE DATASET - MANUAL DOWNLOAD REQUIRED\n\n`;
-            responseText += `This dataset has **${totalRows} rows** and CANNOT be analyzed in-context.\n\n`;
-            responseText += `**CRITICAL: Do NOT attempt automated downloads or create sample/synthetic data.**\n\n`;
-            responseText += `**REQUIRED STEPS for analysis:**\n\n`;
-            responseText += `1. **Manual download ONLY:** Open ${resource.url} in your browser and save the file\n`;
-            responseText += `2. **Attach the downloaded file** to this conversation using the paperclip icon\n`;
-            responseText += `3. **Wait for confirmation** that the file is loaded before proceeding with analysis\n\n`;
-            responseText += `**DO NOT:**\n`;
-            responseText += `- ❌ Use wget, curl, or requests to download (proxy errors)\n`;
-            responseText += `- ❌ Create synthetic/sample data based on the preview\n`;
-            responseText += `- ❌ Extrapolate from the 10-row preview below\n\n`;
-            responseText += `The 10-row preview below is for REFERENCE ONLY and must NOT be used for analysis.\n\n`;
-            responseText += `---\n\n`;
-            responseText += `## Data Preview\n\n`;
-            responseText += `**Columns (${fetchedData.columns.length}):** ${fetchedData.columns.join(', ')}\n\n`;
-            responseText += `**Sample Data (first ${sample.sampleRows.length} rows):**\n`;
-            responseText += `\`\`\`json\n${JSON.stringify(sample.sampleRows, null, 2)}\n\`\`\`\n\n`;
+            responseText += `Dataset has ${totalRows} rows. This is a **${sizeLabel} dataset** (${totalRows.toLocaleString()} rows).
+
+            ## USE \`aggregate_dataset\` FOR ANALYSIS
+            
+            This dataset is too large to load all rows directly into context.
+            
+            **CRITICAL INSTRUCTIONS:**
+            - **DO NOT** ask the user to download or upload CSV files.
+            - **DO NOT** attempt to analyze full totals based only on the preview sample below.
+            - **USE \`aggregate_dataset\`** to perform server-side counts, totals, or grouped breakdowns (e.g. \`group_by: ["BEZIRK_NAME"]\` or other columns listed below).
+            - If the user explicitly wants to download the file, use \`download_dataset\` to get a direct download link.
+            
+            ---
+            
+            ## Data Preview & Structure
+            
+            **Columns (${fetchedData.columns.length}):** ${fetchedData.columns.join(', ')}
+            
+            **Sample Data (first ${sample.sampleRows.length} rows for column reference only):**
+            \`\`\`json
+            ${JSON.stringify(sample.sampleRows, null, 2)}
+            \`\`\`
+            
+            `;
 
             return {
               content: [{ type: 'text', text: responseText }],
@@ -860,7 +866,7 @@ export class BerlinOpenDataMCPServer {
             const GEOMETRY_COLS = new Set(['geometry_coordinates', 'geometry_type', 'geometry']);
             const lorInfo = this.lorLookup.hasLORColumns(fetchedData.columns);
             let rows = fetchedData.rows;
-            if (this.lorLookup.isLoaded() && (lorInfo.hasBEZ || lorInfo.hasRAUMID)) {
+            if (this.lorLookup.isLoaded() && (lorInfo.hasBEZ || lorInfo.hasRAUMID || lorInfo.hasLOR)) {
               rows = rows.map(row => this.lorLookup.enrichRow(row));
             }
 
