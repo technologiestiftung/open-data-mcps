@@ -25,6 +25,15 @@ async function main() {
 
   // MCP endpoint
   app.all('/mcp', async (req, res) => {
+    // Reject ALL GET requests immediately — forces POST-only JSON mode
+    if (req.method === 'GET') {
+      res.status(405).json({
+        jsonrpc: '2.0',
+        error: { code: -32601, message: 'Method Not Allowed' },
+        id: null,
+      });
+      return;
+    }
     console.log(`Received ${req.method} request to /mcp`);
 
     try {
@@ -55,17 +64,6 @@ async function main() {
         await mcpServer.connect(newTransport);
         transport = newTransport;
       } else {
-        // If the client is probing with GET, return 405 Method Not Allowed.
-        // This signals the @ai-sdk/mcp client to gracefully fall back to stateless HTTP POST-response mode.
-        if (req.method === 'GET') {
-          res.status(405).json({
-            jsonrpc: '2.0',
-            error: { code: -32601, message: 'Method Not Allowed: Use POST for stateless MCP requests or provide a valid session ID' },
-            id: null,
-          });
-          return;
-        }
-
         res.status(400).json({
           jsonrpc: '2.0',
           error: { code: -32000, message: 'Bad Request: No valid session ID provided' },

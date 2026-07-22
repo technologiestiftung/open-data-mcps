@@ -29,6 +29,15 @@ async function main() {
 
     // MCP endpoint
     app.all('/mcp', async (req, res) => {
+      // Reject ALL GET requests immediately — forces POST-only JSON mode
+      if (req.method === 'GET') {
+        res.status(405).json({
+          jsonrpc: '2.0',
+          error: { code: -32601, message: 'Method Not Allowed' },
+          id: null,
+        });
+        return;
+      }
       console.log(`Received ${req.method} request to /mcp`);
   
       try {
@@ -66,16 +75,9 @@ async function main() {
           await mcpServer.connect(newTransport);
           transport = newTransport;
         } else {
-          // Return 405 for GET requests without a session ID (standard MCP specification),
-          // which tells the client to fall back to stateless HTTP POST-only communication.
-          const statusCode = req.method === 'GET' ? 405 : 400;
-          const errorMessage = req.method === 'GET' 
-            ? 'Method not allowed' 
-            : 'Bad Request: No valid session ID provided';
-  
-          res.status(statusCode).json({
+          res.status(400).json({
             jsonrpc: '2.0',
-            error: { code: -32000, message: errorMessage },
+            error: { code: -32000, message: 'Bad Request: No valid session ID provided' },
             id: null,
           });
           return;
