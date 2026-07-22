@@ -44,6 +44,7 @@ async function main() {
   
           const newTransport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(),
+            enableJsonResponse: true,
             onsessioninitialized: (sid) => {
               console.log(`MCP session initialized: ${sid}`);
               sessionId = sid;

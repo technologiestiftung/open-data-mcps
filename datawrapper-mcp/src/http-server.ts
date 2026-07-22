@@ -36,6 +36,7 @@ async function main() {
       } else if (!sessionId && req.method === 'POST' && isInitializeRequest(req.body)) {
         const newTransport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
+          enableJsonResponse: true,
           onsessioninitialized: (sid) => {
             console.log(`MCP session initialized: ${sid}`);
             transports[sid] = newTransport;
