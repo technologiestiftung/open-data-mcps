@@ -29,9 +29,6 @@ async function main() {
 
     // MCP endpoint
     app.all('/mcp', async (req, res) => {
-      res.setHeader('X-Accel-Buffering', 'no');
-      res.setHeader('Cache-Control', 'no-cache, no-transform');
-      res.setHeader('Connection', 'keep-alive');
       console.log(`Received ${req.method} request to /mcp`);
   
       try {
@@ -77,6 +74,14 @@ async function main() {
           const mcpServer = new BerlinOpenDataMCPServer({ sessionCache });
           await mcpServer.connect(newTransport);
           transport = newTransport;
+        } else if (req.method === 'GET') {
+          res.setHeader('Allow', 'POST');
+          res.status(405).json({
+            jsonrpc: '2.0',
+            error: { code: -32000, message: 'Method Not Allowed: Initial requests must be POST' },
+            id: null,
+          });
+          return;
         } else {
           res.status(400).json({
             jsonrpc: '2.0',
@@ -85,7 +90,7 @@ async function main() {
           });
           return;
         }
-  
+
         if (!transport) {
           res.status(500).json({
             jsonrpc: '2.0',
@@ -94,7 +99,7 @@ async function main() {
           });
           return;
         }
-  
+
         await transport.handleRequest(req, res, req.body);
       } catch (error) {
         console.error('Error handling MCP request:', error);
