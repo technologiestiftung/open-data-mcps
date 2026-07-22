@@ -38,8 +38,17 @@ async function main() {
         const sessionId = req.headers['mcp-session-id'] as string;
         let transport: StreamableHTTPServerTransport | undefined;
   
-        if (sessionId && transports[sessionId]) {
-          transport = transports[sessionId];
+        if (sessionId) {
+          if (transports[sessionId]) {
+            transport = transports[sessionId];
+          } else {
+            res.status(404).json({
+              jsonrpc: '2.0',
+              error: { code: -32000, message: 'Session not found' },
+              id: null,
+            });
+            return;
+          }
         } else if ((req.method === 'POST' && isInitializeRequest(req.body)) || req.method === 'GET') {
           // Create new session (handles both fresh connections and stale session IDs)
           const sessionCache = new Map<string, any[]>();
