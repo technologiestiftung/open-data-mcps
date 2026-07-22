@@ -712,7 +712,7 @@ export class BerlinOpenDataMCPServer {
               const lorInfo = this.lorLookup.hasLORColumns(fetchedData.columns);
               let enrichedRows = fetchedData.rows;
 
-              if (this.lorLookup.isLoaded() && (lorInfo.hasBEZ || lorInfo.hasRAUMID)) {
+              if (this.lorLookup.isLoaded() && (lorInfo.hasBEZ || lorInfo.hasRAUMID || lorInfo.hasLOR)) {
                 enrichedRows = fetchedData.rows.map(row => this.lorLookup.enrichRow(row));
               }
 
@@ -725,9 +725,9 @@ export class BerlinOpenDataMCPServer {
                 : '';
               responseText += `**Rows**: ${totalRows}${sampledNote} | **Columns (${displayColumns.length}):** ${displayColumns.join(', ')}\n\n`;
 
-              if (this.lorLookup.isLoaded() && (lorInfo.hasBEZ || lorInfo.hasRAUMID)) {
+              if (this.lorLookup.isLoaded() && (lorInfo.hasBEZ || lorInfo.hasRAUMID || lorInfo.hasLOR)) {
                 responseText += `**📍 LOR Enrichment:** Automatically enriched with Berlin administrative district names.\n`;
-                if (lorInfo.hasBEZ) responseText += `- \`BEZIRK_NAME\`: Full bezirk name (e.g., "Marzahn-Hellersdorf")\n`;
+                if (lorInfo.hasBEZ || lorInfo.hasLOR) responseText += `- \`BEZIRK_NAME\`: Full bezirk name (e.g., "Marzahn-Hellersdorf")\n`;
                 if (lorInfo.hasRAUMID) responseText += `- \`PLANUNGSRAUM_NAME\`, \`BEZIRKSREGION_NAME\`, \`PROGNOSERAUM_NAME\`: Planning area names\n`;
                 responseText += `\n`;
               }

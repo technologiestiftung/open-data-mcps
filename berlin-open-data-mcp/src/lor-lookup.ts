@@ -106,10 +106,11 @@ export class LORLookupService {
   /**
    * Check if dataset has LOR columns that can be enriched
    */
-  hasLORColumns(columns: string[]): { hasBEZ: boolean; hasRAUMID: boolean } {
+  hasLORColumns(columns: string[]): { hasBEZ: boolean; hasRAUMID: boolean; hasLOR: boolean;} {
     return {
       hasBEZ: columns.includes('BEZ'),
-      hasRAUMID: columns.includes('RAUMID')
+      hasRAUMID: columns.includes('RAUMID'),
+      hasLOR: columns.includes('LOR'),
     };
   }
 
@@ -134,6 +135,14 @@ export class LORLookupService {
       enriched.PROGNOSERAUM_NAME = hierarchy.PGR;
       enriched.BEZIRKSREGION_NAME = hierarchy.BZR;
       enriched.PLANUNGSRAUM_NAME = hierarchy.PLR;
+    }
+
+    // If a row has an 8-digit LOR string (e.g. 01100309), extract the first 2 digits (01 = Mitte) to resolve BEZIRK_NAME via bezirkMap.
+    if (row.LOR && typeof row.LOR === 'string' && row.LOR.length === 8) {
+      const bezirkCode = row.LOR.substring(0, 2);
+      if (this.bezirkMap.has(bezirkCode)) {
+        enriched.BEZIRK_NAME = this.bezirkMap.get(bezirkCode);
+      }
     }
 
     return enriched;
