@@ -100,6 +100,10 @@ async function main() {
           return;
         }
 
+        if (req.method === 'GET') {
+          res.write(':\n\n'); // Immediate SSE comment flushes Render's proxy buffer
+        }
+
         await transport.handleRequest(req, res, req.body);
       } catch (error) {
         console.error('Error handling MCP request:', error);
