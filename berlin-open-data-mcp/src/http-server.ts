@@ -29,6 +29,9 @@ async function main() {
 
     // MCP endpoint
     app.all('/mcp', async (req, res) => {
+      res.setHeader('X-Accel-Buffering', 'no');
+      res.setHeader('Cache-Control', 'no-cache, no-transform');
+      res.setHeader('Connection', 'keep-alive');
       console.log(`Received ${req.method} request to /mcp`);
   
       try {
@@ -101,6 +104,11 @@ async function main() {
         }
 
         await transport.handleRequest(req, res, req.body);
+
+        // Flush reverse proxy buffers (e.g. Render / Nginx) for GET SSE streams after headers are sent by transport
+        if (req.method === 'GET' && res.headersSent && !res.writableEnded) {
+          res.write(':\n\n');
+        }
       } catch (error) {
         console.error('Error handling MCP request:', error);
         if (!res.headersSent) {
