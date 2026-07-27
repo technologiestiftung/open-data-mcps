@@ -30,14 +30,23 @@ async function main() {
     res.setHeader('Connection', 'keep-alive');
     console.log(`Received ${req.method} request to /mcp`);
 
-    // Patch writeHead so subsequent SDK calls don't throw ERR_HTTP_HEADERS_SENT if headers were already sent
+    // Intercept writeHead to flush headers and send the Render buffer-bypass SSE comment
+    // ONLY after the SDK has registered its actual headers.
     const originalWriteHead = res.writeHead.bind(res);
     // @ts-ignore
     res.writeHead = function (statusCode: number, ...args: any[]) {
-      if (res.headersSent) {
-        return res;
+      const result = originalWriteHead(statusCode, ...args);
+
+      if (typeof res.flushHeaders === 'function') {
+        res.flushHeaders();
       }
-      return originalWriteHead(statusCode, ...args);
+
+      // Write SSE keep-alive comment only for GET SSE streams
+      if (req.method === 'GET') {
+        res.write(':\n\n');
+      }
+
+      return result;
     };
 
     try {
@@ -62,7 +71,7 @@ async function main() {
           onsessioninitialized: (sid) => {
             console.log(`MCP session initialized: ${sid}`);
             transports[sid] = newTransport;
-          }
+          },
         });
 
         newTransport.onclose = () => {
@@ -100,11 +109,6 @@ async function main() {
           id: null,
         });
         return;
-      }
-
-      if (req.method === 'GET') {
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.write(':\n\n'); // Immediate SSE comment flushes Render's proxy buffer
       }
 
       await transport.handleRequest(req, res, req.body);
