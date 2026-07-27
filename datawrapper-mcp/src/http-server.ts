@@ -25,29 +25,17 @@ async function main() {
 
   // MCP endpoint
   app.all('/mcp', async (req, res) => {
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('Connection', 'keep-alive');
     console.log(`Received ${req.method} request to /mcp`);
 
-    // Intercept writeHead to flush headers and send the Render buffer-bypass SSE comment
-    // ONLY after the SDK has registered its actual headers.
-    const originalWriteHead = res.writeHead.bind(res);
-    // @ts-ignore
-    res.writeHead = function (statusCode: number, ...args: any[]) {
-      const result = originalWriteHead(statusCode, ...args);
-
-      if (typeof res.flushHeaders === 'function') {
-        res.flushHeaders();
-      }
-
-      // Write SSE keep-alive comment only for GET SSE streams
-      if (req.method === 'GET') {
-        res.write(':\n\n');
-      }
-
-      return result;
-    };
+    if (req.method === 'GET') {
+       res.setHeader('Allow', 'POST');
+       res.status(405).json({
+         jsonrpc: '2.0',
+         error: { code: -32000, message: 'Method Not Allowed: SSE streams not supported. Use POST HTTP transport.' },
+         id: null,
+       });
+       return;
+    }
 
     try {
       const sessionId = req.headers['mcp-session-id'] as string;
@@ -85,14 +73,6 @@ async function main() {
         const mcpServer = new DatawrapperMCPServer();
         await mcpServer.connect(newTransport);
         transport = newTransport;
-      } else if (req.method === 'GET') {
-        res.setHeader('Allow', 'POST');
-        res.status(405).json({
-          jsonrpc: '2.0',
-          error: { code: -32000, message: 'Method Not Allowed: Initial requests must be POST' },
-          id: null,
-        });
-        return;
       } else {
         res.status(400).json({
           jsonrpc: '2.0',
