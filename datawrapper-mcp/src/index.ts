@@ -2,17 +2,15 @@
 // ABOUTME: MCP server for Datawrapper visualization integration
 // ABOUTME: Exposes create_visualization tool for creating charts via Datawrapper API
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  Tool,
-} from '@modelcontextprotocol/sdk/types.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { DatawrapperClient } from './datawrapper-client.js';
 import { ChartBuilder } from './chart-builder.js';
 import { ChartLogger } from './chart-logger.js';
 import { CreateVisualizationParams, PublishVisualizationParams, ChartType, ChartVariant, GeoJSON, DetectionResult } from './types.js';
 import { BasemapMatcher } from './basemap-matcher.js';
+import { CreateVisualizationSchema, PublishVisualizationSchema } from './schemas.js';
 
 /**
  * Get default visualize settings for chart types that need them
@@ -100,139 +98,8 @@ Found columns: ${Object.keys(detection.totalRows > 0 ? {} : {}).join(', ') || 'n
   return response;
 }
 
-// Tool definitions
-const CREATE_VISUALIZATION_TOOL: Tool = {
-  name: 'create_visualization',
-  description: 'Create a data visualization using the Datawrapper API. Pass `api_key` with every request; the server is stateless and does not persist tokens between tool calls. The chart is NOT published automatically - use `publish_visualization` after the user approves it. Supports bar, column, line, area, scatter, dot, range, arrow, pie, donut, election-donut, table, and map charts. Use "variant" for bar (basic/stacked/split) and column (basic/grouped/stacked) charts. **For maps, map_type is REQUIRED**: "d3-maps-symbols" (points with GeoJSON) or "d3-maps-choropleth" (regions with tabular data). **For choropleth maps**: provide tabular data with Berlin region identifiers (Bezirke, Prognoseräume, Bezirksregionen, or Planungsräume). If basemap is not specified, the tool will auto-detect and return available options. Returns an edit URL where the user can preview and adjust the chart before publishing.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      api_key: {
-        type: 'string',
-        description: 'Your Datawrapper API token. Required on every request because this MCP server is stateless.'
-      },
-      data: {
-        description: 'Array of data objects. For choropleth maps: tabular data with region IDs/names. For symbol maps: GeoJSON FeatureCollection.',
-        oneOf: [
-          {
-            type: 'array',
-            items: {
-              type: 'object'
-            }
-          },
-          {
-            type: 'object',
-            properties: {
-              type: { type: 'string', enum: ['FeatureCollection'] },
-              features: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    type: { type: 'string', enum: ['Feature'] },
-                    geometry: {
-                      type: 'object',
-                      properties: {
-                        type: { type: 'string' },
-                        coordinates: {}
-                      },
-                      required: ['type', 'coordinates']
-                    },
-                    properties: {
-                      type: 'object',
-                      additionalProperties: true
-                    }
-                  },
-                  required: ['type', 'geometry']
-                }
-              }
-            },
-            required: ['type', 'features']
-          }
-        ]
-      },
-      chart_type: {
-        type: 'string',
-        enum: ['bar', 'column', 'line', 'area', 'scatter', 'dot', 'range', 'arrow', 'pie', 'donut', 'election-donut', 'table', 'map'],
-        description: 'Type of visualization to create'
-      },
-      variant: {
-        type: 'string',
-        enum: ['basic', 'stacked', 'grouped', 'split'],
-        description: 'Chart variant. For bar: basic (default), stacked, split. For column: basic (default), grouped, stacked.'
-      },
-      map_type: {
-        type: 'string',
-        enum: ['d3-maps-symbols', 'd3-maps-choropleth'],
-        description: 'REQUIRED when chart_type is "map". "d3-maps-symbols" for point locations (requires GeoJSON), "d3-maps-choropleth" for region comparison (requires tabular data with Berlin region identifiers).'
-      },
-      basemap: {
-        type: 'string',
-        enum: ['berlin-boroughs', 'berlin-prognoseraume-2021', 'berlin-bezreg-2021', 'berlin-planungsraeume-2021'],
-        description: 'For choropleth maps: explicitly select basemap. If omitted, auto-detects from data and returns options for confirmation.'
-      },
-      region_column: {
-        type: 'string',
-        description: 'For choropleth maps: column name containing region IDs or names. Auto-detected if omitted.'
-      },
-      value_column: {
-        type: 'string',
-        description: 'For choropleth maps: column name containing values to visualize. Auto-detected if omitted.'
-      },
-      base_color: {
-        type: 'string',
-        description: 'Optional base color for the chart, for example "#E63946".'
-      },
-      thick: {
-        type: 'boolean',
-        description: 'Optional Datawrapper thickness toggle for supported chart types.'
-      },
-      value_label_format: {
-        type: 'string',
-        description: 'Optional Datawrapper number format for value labels, for example "0,0.[00]" or "0.0%".'
-      },
-      visualize_overrides: {
-        type: 'object',
-        description: 'Optional advanced Datawrapper visualize metadata overrides. Use this for additional styling beyond base_color.'
-      },
-      title: {
-        type: 'string',
-        description: 'Optional chart title (auto-generated if omitted)'
-      },
-      description: {
-        type: 'string',
-        description: 'Optional chart description/byline'
-      },
-      source_dataset_id: {
-        type: 'string',
-        description: 'Optional Berlin dataset ID for tracking'
-      }
-    },
-    required: ['api_key', 'data', 'chart_type']
-  }
-};
-
-const PUBLISH_VISUALIZATION_TOOL: Tool = {
-  name: 'publish_visualization',
-  description: 'Publish a previously created visualization to make it publicly viewable. Pass `api_key` with every request because this MCP server is stateless. Use this after the user has reviewed and approved the chart in the Datawrapper editor.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      api_key: {
-        type: 'string',
-        description: 'Your Datawrapper API token. Required on every request because this MCP server is stateless.'
-      },
-      chart_id: {
-        type: 'string',
-        description: 'The chart ID returned from create_visualization'
-      }
-    },
-    required: ['api_key', 'chart_id']
-  }
-};
-
 export class DatawrapperMCPServer {
-  private server: Server;
+  private server: McpServer;
   private chartBuilder: ChartBuilder;
   private chartLogger: ChartLogger;
   private basemapMatcher: BasemapMatcher;
@@ -240,7 +107,7 @@ export class DatawrapperMCPServer {
   constructor(chartLogPath?: string) {
     const logPath = chartLogPath || process.env.CHART_LOG_PATH || './charts-log.json';
 
-    this.server = new Server(
+    this.server = new McpServer(
       {
         name: 'datawrapper-mcp',
         version: '1.0.0',
@@ -268,30 +135,30 @@ export class DatawrapperMCPServer {
   }
 
   private setupHandlers() {
-    // List available tools
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      return {
-        tools: [CREATE_VISUALIZATION_TOOL, PUBLISH_VISUALIZATION_TOOL]
-      };
-    });
-
-    // Handle tool execution
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
-
-      if (name === 'create_visualization') {
-        return await this.handleCreateVisualization(args as unknown as CreateVisualizationParams);
+    this.server.registerTool(
+      'create_visualization',
+      {
+        description: 'Create a data visualization using the Datawrapper API. Pass `api_key` with every request; the server is stateless and does not persist tokens between tool calls. The chart is NOT published automatically - use `publish_visualization` after the user approves it. Supports bar, column, line, area, scatter, dot, range, arrow, pie, donut, election-donut, table, and map charts. Use "variant" for bar (basic/stacked/split) and column (basic/grouped/stacked) charts. **For maps, map_type is REQUIRED**: "d3-maps-symbols" (points with GeoJSON) or "d3-maps-choropleth" (regions with tabular data). **For choropleth maps**: provide tabular data with Berlin region identifiers (Bezirke, Prognoseräume, Bezirksregionen, or Planungsräume). If basemap is not specified, the tool will auto-detect and return available options. Returns an edit URL where the user can preview and adjust the chart before publishing.',
+        inputSchema: CreateVisualizationSchema,
+      },
+      async (args) => {
+        return await this.handleCreateVisualization(args as CreateVisualizationParams);
       }
+    );
 
-      if (name === 'publish_visualization') {
-        return await this.handlePublishVisualization(args as unknown as PublishVisualizationParams);
+    this.server.registerTool(
+      'publish_visualization',
+      {
+        description: 'Publish a previously created visualization to make it publicly viewable. Pass `api_key` with every request because this MCP server is stateless. Use this after the user has reviewed and approved the chart in the Datawrapper editor.',
+        inputSchema: PublishVisualizationSchema,
+      },
+      async (args) => {
+        return await this.handlePublishVisualization(args as PublishVisualizationParams);
       }
-
-      throw new Error(`Unknown tool: ${name}`);
-    });
+    );
   }
 
-  private async handleCreateVisualization(params: CreateVisualizationParams) {
+  private async handleCreateVisualization(params: CreateVisualizationParams): Promise<CallToolResult> {
     try {
       const { api_key, data, chart_type, variant, map_type, base_color, thick, value_label_format, visualize_overrides, title, description, source_dataset_id } = params;
       const datawrapperClient = this.getAuthenticatedClient(api_key);
@@ -469,7 +336,7 @@ ${JSON.stringify(sampleFeature, null, 2)}
     }
   }
 
-  private async handleChoroplethMap(datawrapperClient: DatawrapperClient, params: CreateVisualizationParams) {
+  private async handleChoroplethMap(datawrapperClient: DatawrapperClient, params: CreateVisualizationParams): Promise<CallToolResult> {
     const { data, basemap, region_column, value_column, base_color, thick, value_label_format, visualize_overrides, title, description, source_dataset_id } = params;
 
     // Choropleth maps require tabular data, not GeoJSON
@@ -618,7 +485,7 @@ ${JSON.stringify(sampleFeature, null, 2)}
     };
   }
 
-  private async handlePublishVisualization(params: PublishVisualizationParams) {
+  private async handlePublishVisualization(params: PublishVisualizationParams): Promise<CallToolResult> {
     try {
       const { api_key, chart_id } = params;
       const datawrapperClient = this.getAuthenticatedClient(api_key);

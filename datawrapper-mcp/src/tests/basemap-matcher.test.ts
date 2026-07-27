@@ -1,6 +1,7 @@
 // ABOUTME: Unit tests for BasemapMatcher class
-// ABOUTME: Run with: npm run build && node dist/tests/basemap-matcher.test.js
+// ABOUTME: Run with: npm test
 
+import { describe, it, expect } from 'vitest';
 import { BasemapMatcher } from '../basemap-matcher.js';
 
 const matcher = new BasemapMatcher();
@@ -47,97 +48,72 @@ const noMatchData = [
   { region: 'Unknown2', value: 200 },
 ];
 
-function test(name: string, fn: () => void) {
-  try {
-    fn();
-    console.log(`✅ ${name}`);
-  } catch (error: any) {
-    console.log(`❌ ${name}`);
-    console.log(`   ${error.message}`);
-  }
-}
+describe('BasemapMatcher Unit Tests', () => {
+  it('detects Bezirke by ID column', () => {
+    const result = matcher.detectAvailableLevels(bezirkeDataById);
+    expect(result.detected).toBe(true);
+    expect(result.primaryLevel?.basemap).toBe('berlin-boroughs');
+    expect(result.regionColumn).toBe('BEZ_ID');
+  });
 
-function assertEqual(actual: any, expected: any, message?: string) {
-  if (actual !== expected) {
-    throw new Error(`${message || 'Assertion failed'}: expected ${expected}, got ${actual}`);
-  }
-}
+  it('detects Bezirke by name', () => {
+    const result = matcher.detectAvailableLevels(bezirkeDataByName);
+    expect(result.detected).toBe(true);
+    expect(result.primaryLevel?.basemap).toBe('berlin-boroughs');
+  });
 
-function assertTrue(actual: boolean, message?: string) {
-  if (!actual) {
-    throw new Error(message || 'Expected true but got false');
-  }
-}
+  it('detects Prognoseräume', () => {
+    const result = matcher.detectAvailableLevels(prognoseraeumeData);
+    expect(result.detected).toBe(true);
+    expect(result.primaryLevel?.basemap).toBe('berlin-prognoseraume-2021');
+    expect(result.regionColumn).toBe('PGR_ID');
+  });
 
-console.log('\nBasemapMatcher Unit Tests\n' + '='.repeat(50));
+  it('detects Bezirksregionen', () => {
+    const result = matcher.detectAvailableLevels(bezirksregionenData);
+    expect(result.detected).toBe(true);
+    expect(result.primaryLevel?.basemap).toBe('berlin-bezreg-2021');
+    expect(result.regionColumn).toBe('BZR_ID');
+  });
 
-test('detects Bezirke by ID column', () => {
-  const result = matcher.detectAvailableLevels(bezirkeDataById);
-  assertTrue(result.detected, 'Should detect regions');
-  assertEqual(result.primaryLevel?.basemap, 'berlin-boroughs', 'Should detect berlin-boroughs');
-  assertEqual(result.regionColumn, 'BEZ_ID', 'Should identify BEZ_ID column');
+  it('detects Planungsräume', () => {
+    const result = matcher.detectAvailableLevels(planungsraeumeData);
+    expect(result.detected).toBe(true);
+    expect(result.primaryLevel?.basemap).toBe('berlin-planungsraeume-2021');
+    expect(result.regionColumn).toBe('PLR_ID');
+  });
+
+  it('detects multiple levels in mixed data', () => {
+    const result = matcher.detectAvailableLevels(mixedData);
+    expect(result.detected).toBe(true);
+    expect(result.allLevels.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('finds value column', () => {
+    const result = matcher.detectAvailableLevels(bezirkeDataById);
+    expect(result.valueColumn).toBe('population');
+  });
+
+  it('returns detected=false for unrecognized data', () => {
+    const result = matcher.detectAvailableLevels(noMatchData);
+    expect(result.detected).toBe(false);
+    expect(result.allLevels.length).toBe(0);
+  });
+
+  it('pads BEZ_ID correctly', () => {
+    expect(matcher.padBezirkId('01')).toBe('001');
+    expect(matcher.padBezirkId('12')).toBe('012');
+    expect(matcher.padBezirkId('001')).toBe('001');
+  });
+
+  it('getLORLevels returns all levels', () => {
+    const levels = matcher.getLORLevels();
+    expect(levels.length).toBe(4);
+  });
+
+  it('getLevelByBasemap returns correct level', () => {
+    const level = matcher.getLevelByBasemap('berlin-boroughs');
+    expect(level?.label).toBe('Bezirke');
+    expect(level?.count).toBe(12);
+  });
 });
-
-test('detects Bezirke by name', () => {
-  const result = matcher.detectAvailableLevels(bezirkeDataByName);
-  assertTrue(result.detected, 'Should detect regions');
-  assertEqual(result.primaryLevel?.basemap, 'berlin-boroughs', 'Should detect berlin-boroughs');
-});
-
-test('detects Prognoseräume', () => {
-  const result = matcher.detectAvailableLevels(prognoseraeumeData);
-  assertTrue(result.detected, 'Should detect regions');
-  assertEqual(result.primaryLevel?.basemap, 'berlin-prognoseraume-2021', 'Should detect prognoseraume');
-  assertEqual(result.regionColumn, 'PGR_ID', 'Should identify PGR_ID column');
-});
-
-test('detects Bezirksregionen', () => {
-  const result = matcher.detectAvailableLevels(bezirksregionenData);
-  assertTrue(result.detected, 'Should detect regions');
-  assertEqual(result.primaryLevel?.basemap, 'berlin-bezreg-2021', 'Should detect bezreg');
-  assertEqual(result.regionColumn, 'BZR_ID', 'Should identify BZR_ID column');
-});
-
-test('detects Planungsräume', () => {
-  const result = matcher.detectAvailableLevels(planungsraeumeData);
-  assertTrue(result.detected, 'Should detect regions');
-  assertEqual(result.primaryLevel?.basemap, 'berlin-planungsraeume-2021', 'Should detect planungsraeume');
-  assertEqual(result.regionColumn, 'PLR_ID', 'Should identify PLR_ID column');
-});
-
-test('detects multiple levels in mixed data', () => {
-  const result = matcher.detectAvailableLevels(mixedData);
-  assertTrue(result.detected, 'Should detect regions');
-  assertTrue(result.allLevels.length >= 2, 'Should detect multiple levels');
-});
-
-test('finds value column', () => {
-  const result = matcher.detectAvailableLevels(bezirkeDataById);
-  assertEqual(result.valueColumn, 'population', 'Should find numeric column');
-});
-
-test('returns detected=false for unrecognized data', () => {
-  const result = matcher.detectAvailableLevels(noMatchData);
-  assertTrue(!result.detected, 'Should not detect regions');
-  assertEqual(result.allLevels.length, 0, 'Should have no levels');
-});
-
-test('pads BEZ_ID correctly', () => {
-  assertEqual(matcher.padBezirkId('01'), '001', 'Should pad 01 to 001');
-  assertEqual(matcher.padBezirkId('12'), '012', 'Should pad 12 to 012');
-  assertEqual(matcher.padBezirkId('001'), '001', 'Should not change 001');
-});
-
-test('getLORLevels returns all levels', () => {
-  const levels = matcher.getLORLevels();
-  assertEqual(levels.length, 4, 'Should have 4 LOR levels');
-});
-
-test('getLevelByBasemap returns correct level', () => {
-  const level = matcher.getLevelByBasemap('berlin-boroughs');
-  assertEqual(level?.label, 'Bezirke', 'Should return Bezirke level');
-  assertEqual(level?.count, 12, 'Should have 12 regions');
-});
-
-console.log('\n' + '='.repeat(50));
-console.log('Tests complete\n');
