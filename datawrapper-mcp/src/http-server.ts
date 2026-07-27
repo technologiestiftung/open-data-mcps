@@ -30,6 +30,16 @@ async function main() {
     res.setHeader('Connection', 'keep-alive');
     console.log(`Received ${req.method} request to /mcp`);
 
+    // Patch writeHead so subsequent SDK calls don't throw ERR_HTTP_HEADERS_SENT if headers were already sent
+    const originalWriteHead = res.writeHead.bind(res);
+    // @ts-ignore
+    res.writeHead = function (statusCode: number, ...args: any[]) {
+      if (res.headersSent) {
+        return res;
+      }
+      return originalWriteHead(statusCode, ...args);
+    };
+
     try {
       const sessionId = req.headers['mcp-session-id'] as string;
       let transport: StreamableHTTPServerTransport | undefined;
@@ -92,12 +102,12 @@ async function main() {
         return;
       }
 
-      await transport.handleRequest(req, res, req.body);
-
-      // Flush reverse proxy buffers (e.g. Render / Nginx) for GET SSE streams after headers are sent by transport
-      if (req.method === 'GET' && res.headersSent && !res.writableEnded) {
-        res.write(':\n\n');
+      if (req.method === 'GET') {
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.write(':\n\n'); // Immediate SSE comment flushes Render's proxy buffer
       }
+
+      await transport.handleRequest(req, res, req.body);
     } catch (error) {
       console.error('Error handling MCP request:', error);
       if (!res.headersSent) {
