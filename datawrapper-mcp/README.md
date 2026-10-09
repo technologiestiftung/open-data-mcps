@@ -58,7 +58,7 @@ To get a Datawrapper API token:
 1. Get a Datawrapper API token:
    - Create account at https://app.datawrapper.de/
    - Navigate to Settings → API Tokens
-   - Create new token with permissions: `chart:read`, `chart:write`, `chart:publish`
+   - Create new token with permissions: `chart:read`, `chart:write`, `theme:read` and `visualization:read`
 
 ## MCP Tools
 
