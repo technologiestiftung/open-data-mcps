@@ -138,7 +138,7 @@ export class DatawrapperMCPServer {
     this.server.registerTool(
       'create_visualization',
       {
-        description: 'Create a data visualization using the Datawrapper API. Pass `api_key` with every request; the server is stateless and does not persist tokens between tool calls. The chart is NOT published automatically - use `publish_visualization` after the user approves it. Supports bar, column, line, area, scatter, dot, range, arrow, pie, donut, election-donut, table, and map charts. Use "variant" for bar (basic/stacked/split) and column (basic/grouped/stacked) charts. **For maps, map_type is REQUIRED**: "d3-maps-symbols" (points with GeoJSON) or "d3-maps-choropleth" (regions with tabular data). **For choropleth maps**: provide tabular data with Berlin region identifiers (Bezirke, Prognoseräume, Bezirksregionen, or Planungsräume). If basemap is not specified, the tool will auto-detect and return available options. Returns an edit URL where the user can preview and adjust the chart before publishing.',
+        description: 'Create a data visualization using the Datawrapper API. The chart is NOT published automatically - use `publish_visualization` after the user approves it. Supports bar, column, line, area, scatter, dot, range, arrow, pie, donut, election-donut, table, and map charts. Use "variant" for bar (basic/stacked/split) and column (basic/grouped/stacked) charts. **For maps, map_type is REQUIRED**: "d3-maps-symbols" (points with GeoJSON) or "d3-maps-choropleth" (regions with tabular data). **For choropleth maps**: provide tabular data with Berlin region identifiers (Bezirke, Prognoseräume, Bezirksregionen, or Planungsräume). If basemap is not specified, the tool will auto-detect and return available options. Returns an edit URL where the user can preview and adjust the chart before publishing.',
         inputSchema: CreateVisualizationSchema,
       },
       async (args) => {
@@ -149,7 +149,7 @@ export class DatawrapperMCPServer {
     this.server.registerTool(
       'publish_visualization',
       {
-        description: 'Publish a previously created visualization to make it publicly viewable. Pass `api_key` with every request because this MCP server is stateless. Use this after the user has reviewed and approved the chart in the Datawrapper editor.',
+        description: 'Publish a previously created visualization to make it publicly viewable. Use this after the user has reviewed and approved the chart in the Datawrapper editor.',
         inputSchema: PublishVisualizationSchema,
       },
       async (args) => {
