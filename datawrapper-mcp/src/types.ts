@@ -64,6 +64,7 @@ export interface ChartStyleParams {
 
 export interface CreateVisualizationParams extends ChartStyleParams {
   api_key: string;
+  preview?: boolean;
   data: Array<Record<string, any>> | GeoJSON;
   chart_type: ChartType;
   variant?: ChartVariant;
@@ -83,6 +84,7 @@ export interface CreateVisualizationParams extends ChartStyleParams {
 export interface PublishVisualizationParams {
   api_key: string;
   chart_id: string;
+  preview?: boolean;
 }
 
 export type ListOrderBy = 'createdAt' | 'lastModifiedAt' | 'publishedAt' | 'title' | 'type';
@@ -110,6 +112,7 @@ export interface GetVisualizationParams {
 
 export interface UpdateVisualizationParams extends ChartStyleParams {
   api_key: string;
+  preview?: boolean;
   chart_id: string;
   title?: string;
   description?: string;
@@ -130,6 +133,18 @@ export interface UpdateVisualizationParams extends ChartStyleParams {
 export interface DeleteVisualizationParams {
   api_key: string;
   chart_id: string;
+}
+
+export interface ExportVisualizationPngParams {
+  api_key: string;
+  chart_id: string;
+  width?: number;
+  height?: number;
+  plain?: boolean;
+  zoom?: number;
+  transparent?: boolean;
+  border_width?: number;
+  border_color?: string;
 }
 
 export interface ValidationResult {
@@ -196,6 +211,21 @@ export interface DatawrapperPublishResult {
   chart: DatawrapperChart;
   version?: number;
   url?: string;
+}
+
+/**
+ * Query options for GET /charts/{id}/export/png (camelCase, as the Datawrapper API expects them)
+ */
+export interface ExportPngOptions {
+  width?: number;
+  height?: number;
+  plain?: boolean;
+  zoom?: number;
+  transparent?: boolean;
+  borderWidth?: number;
+  borderColor?: string;
+  // Request timeout in milliseconds (not sent to the API)
+  timeoutMs?: number;
 }
 
 /**

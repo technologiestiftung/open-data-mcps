@@ -22,6 +22,7 @@ MCP server for creating and managing data visualizations using the Datawrapper A
   - **Inspect** a chart's metadata, publish status, public URL, embed code and data
   - **Update** charts in place (colors, title, description, source, type, data) without getting a new chart ID
   - **Delete** charts (moved to the Datawrapper trash for 30 days)
+- 🖼️ **Previews**: `create_visualization`, `update_visualization` and `publish_visualization` attach a PNG preview of the chart, so the assistant can check that a change (e.g. a color) actually shows. `export_visualization_png` exports high-resolution PNGs on request
 - **Smart Defaults**: Automatic titles, labels, and axes from data structure
 - **Provenance Tracking**: JSON log of created charts with source dataset links
 
@@ -87,6 +88,7 @@ Create a data visualization using Datawrapper.
 - `description` (optional): Chart description/byline
 - `source_dataset_id` (optional): Berlin dataset ID for tracking
 - Styling options (optional): see [Styling options](#styling-options)
+- `preview` (optional): Attach a PNG preview to the response (default `true`, see [Previews](#previews))
 
 Grouped and stacked column charts are created with transposed data, so the first column (e.g. years) becomes the x-axis and the other columns become the colored series.
 
@@ -168,6 +170,8 @@ Publish a previously created chart.
 - `api_key` (required): Your Datawrapper API token
 - `chart_id` (required): The chart ID returned from `create_visualization` (or found via `list_visualizations`). Chart IDs have exactly 5 letters or digits (e.g. `aBcDe`); all tools reject other values
 
+- `preview` (optional): Attach a PNG preview to the response (default `true`)
+
 Also use it to republish a chart after `update_visualization`: edits only change the draft, and the public version and embeds keep showing the old state until the chart is published again. The chart ID stays the same, and Datawrapper increments the public version number.
 
 ### `list_visualizations`
@@ -232,6 +236,7 @@ Modify an existing chart in place. The chart keeps its ID, edit URL and embed co
   - `visualize_overrides`: Advanced `metadata.visualize` changes (applied after `base_color`/`thick`/`value_label_format`)
   - `chart_type` + `variant`: Change the chart type (e.g. column to stacked column). If `variant` is omitted and `chart_type` is the chart's current family, the current variant (e.g. stacked) is kept. Converting between charts and maps, and between map types (symbol, choropleth, locator), is not supported: create a new map instead
   - `data`: Replace the whole dataset. It is validated against the chart type first. For choropleth maps it must keep the map's region and value columns. Not supported for chart types this server does not create (e.g. locator maps)
+- `preview` (optional): Attach a PNG preview to the response (default `true`). Does not count as a change
 
 Only the given fields change. The tool sends a partial `PATCH /charts/{id}`, and Datawrapper deep-merges nested metadata objects, so other settings are kept:
 
@@ -294,6 +299,32 @@ Shared by `create_visualization` and `update_visualization`. Datawrapper reads c
   number_append: " Tsd.",
   number_divisor: 3,
   notes: "Stand: 31.12.2025"
+}
+```
+
+### Previews
+
+`create_visualization`, `update_visualization` and `publish_visualization` render the chart via Datawrapper's PNG export and attach it as an image to the response. The preview shows the current state, including unpublished changes. It is best-effort: if the export fails, takes longer than 15 seconds or is larger than 1 MB, the response says so and the chart operation itself still succeeds. Previews are typically 10-50 KB and add about 2 seconds per call. Pass `preview: false` to skip them.
+
+### `export_visualization_png`
+
+Export a chart as a PNG image, e.g. for slides or print. Needs only the `chart:read` scope.
+
+**Parameters**:
+- `api_key` (required): Your Datawrapper API token
+- `chart_id` (required): The chart ID
+- `width`, `height` (optional): Image size in pixels (default: the chart's embed width, automatic height)
+- `zoom` (optional): Resolution multiplier from 1 to 4 (default 2)
+- `plain` (optional): Only the visualization, without title, description and footer
+- `transparent` (optional): Transparent instead of white background
+- `border_width`, `border_color` (optional): Margin around the visualization
+
+```javascript
+{
+  api_key: "your_datawrapper_api_token_here",
+  chart_id: "aBcDe",
+  zoom: 3,
+  plain: true
 }
 ```
 

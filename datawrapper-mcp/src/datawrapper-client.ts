@@ -2,7 +2,7 @@
 // ABOUTME: Handles authentication, chart creation, listing, updates, data upload, publishing and deletion
 
 import axios, { AxiosInstance } from 'axios';
-import { DatawrapperChart, DatawrapperChartList, DatawrapperChartMetadata, DatawrapperChartUpdate, DatawrapperPublishResult, ListChartsOptions } from './types.js';
+import { DatawrapperChart, DatawrapperChartList, DatawrapperChartMetadata, DatawrapperChartUpdate, DatawrapperPublishResult, ExportPngOptions, ListChartsOptions } from './types.js';
 
 // Scopes required per endpoint, used to explain 403 errors
 const SCOPE_READ = 'chart:read';
@@ -256,6 +256,32 @@ export class DatawrapperClient {
       };
     } catch (error: any) {
       throw this.toApiError(error, 'publish chart', { scope: SCOPE_PUBLISH, chartId });
+    }
+  }
+
+  /**
+   * Render a chart (its current, possibly unpublished state) as PNG via GET /charts/{id}/export/png
+   */
+  async exportPng(chartId: string, options: ExportPngOptions = {}): Promise<Buffer> {
+    this.assertChartId(chartId);
+    const { timeoutMs, ...query } = options;
+    const params: Record<string, string | number | boolean> = { unit: 'px' };
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== null && value !== '') {
+        params[key] = value;
+      }
+    }
+
+    try {
+      const response = await this.getClient().get(`/charts/${chartId}/export/png`, {
+        params,
+        responseType: 'arraybuffer',
+        headers: { 'Accept': 'image/png' },
+        ...(timeoutMs ? { timeout: timeoutMs } : {}),
+      });
+      return Buffer.from(response.data);
+    } catch (error: any) {
+      throw this.toApiError(error, 'export chart as PNG', { scope: SCOPE_READ, chartId });
     }
   }
 

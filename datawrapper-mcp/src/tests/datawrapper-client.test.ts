@@ -169,3 +169,25 @@ describe('DatawrapperClient', () => {
     });
   });
 });
+
+describe('DatawrapperClient.exportPng', () => {
+  it('requests a PNG in pixels with the given options and timeout', async () => {
+    http.get.mockResolvedValue({ data: new Uint8Array([137, 80, 78, 71]).buffer });
+
+    const png = await new DatawrapperClient('tok').exportPng('abc12', { zoom: 1, plain: true, width: undefined, timeoutMs: 15000 });
+
+    expect(http.get).toHaveBeenCalledWith('/charts/abc12/export/png', {
+      params: { unit: 'px', zoom: 1, plain: true },
+      responseType: 'arraybuffer',
+      headers: { 'Accept': 'image/png' },
+      timeout: 15000,
+    });
+    expect(png).toEqual(Buffer.from([137, 80, 78, 71]));
+  });
+
+  it('maps errors and rejects invalid chart IDs', async () => {
+    http.get.mockRejectedValue(httpError(403));
+    await expect(new DatawrapperClient('tok').exportPng('abc12')).rejects.toThrow('chart:read');
+    await expect(new DatawrapperClient('tok').exportPng('../x')).rejects.toThrow('Invalid chart ID');
+  });
+});

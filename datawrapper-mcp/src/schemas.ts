@@ -33,6 +33,11 @@ const MapTypeSchema = z.enum(['d3-maps-symbols', 'd3-maps-choropleth']);
 
 const HexColorSchema = z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'Colors must be hex colors like "#2E7D32"');
 
+// Inline PNG preview attached to create/update/publish responses
+const PreviewSchema = z.boolean().optional().describe(
+  'Optional: attach a PNG preview image of the chart to the response (default true). Use it to check that changes such as colors look right. Set false to save tokens.'
+);
+
 // Styling and placement options shared by create_visualization and update_visualization
 const StyleFields = {
   secondary_color: z.string().optional().describe(
@@ -112,6 +117,7 @@ export const CreateVisualizationSchema = z.object({
     'Optional Berlin dataset ID for tracking'
   ),
   ...StyleFields,
+  preview: PreviewSchema,
 });
 
 export const PublishVisualizationSchema = z.object({
@@ -119,6 +125,7 @@ export const PublishVisualizationSchema = z.object({
   chart_id: ChartIdSchema.describe(
     'The chart ID returned from create_visualization (or found via list_visualizations)'
   ),
+  preview: PreviewSchema,
 });
 
 export const ListVisualizationsSchema = z.object({
@@ -207,8 +214,37 @@ export const UpdateVisualizationSchema = z.object({
     'Optional: swap rows and columns of the data (Datawrapper "transpose"). Grouped and stacked column charts are transposed automatically so the first column becomes the x-axis; use this to fix older charts whose axis shows the series names.'
   ),
   ...StyleFields,
+  preview: PreviewSchema,
   data: z.any().optional().describe(
     'Optional replacement dataset. Replaces the whole dataset. Array of data objects; for symbol maps a GeoJSON FeatureCollection. For choropleth maps the data must keep the map\'s region and value columns.'
+  ),
+});
+
+export const ExportVisualizationPngSchema = z.object({
+  api_key: ApiKeySchema,
+  chart_id: ChartIdSchema.describe(
+    'The ID of the chart to export'
+  ),
+  width: z.number().int().min(1).max(5000).optional().describe(
+    'Optional image width in pixels (default: the chart\'s embed width)'
+  ),
+  height: z.number().int().min(1).max(5000).optional().describe(
+    'Optional image height in pixels (default: automatic)'
+  ),
+  plain: z.boolean().optional().describe(
+    'Optional: export only the visualization, without title, description and footer (default false)'
+  ),
+  zoom: z.number().int().min(1).max(4).optional().describe(
+    'Optional resolution multiplier, e.g. 2 = double resolution for print or retina screens (default 2)'
+  ),
+  transparent: z.boolean().optional().describe(
+    'Optional: transparent background instead of white (default false)'
+  ),
+  border_width: z.number().int().min(0).max(200).optional().describe(
+    'Optional margin around the visualization in pixels'
+  ),
+  border_color: z.string().optional().describe(
+    'Optional margin color, e.g. "#FFFFFF"'
   ),
 });
 

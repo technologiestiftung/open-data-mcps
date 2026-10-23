@@ -15,6 +15,7 @@ import {
   GetVisualizationParams,
   UpdateVisualizationParams,
   DeleteVisualizationParams,
+  ExportVisualizationPngParams,
   ChartStyleParams,
   ChartType,
   ChartVariant,
@@ -39,11 +40,16 @@ import {
   GetVisualizationSchema,
   UpdateVisualizationSchema,
   DeleteVisualizationSchema,
+  ExportVisualizationPngSchema,
 } from './schemas.js';
 
 // list_visualizations paging defaults (Datawrapper allows up to 500, we cap to keep responses compact)
 const DEFAULT_LIST_LIMIT = 25;
 const MAX_LIST_LIMIT = 100;
+
+// Inline previews: best-effort, so keep them quicker than an explicit export and skip oversized images
+const PREVIEW_TIMEOUT_MS = 15000;
+const MAX_PREVIEW_BYTES = 1_000_000;
 
 // Size limits for get_visualization output
 const MAX_DATA_LINES = 50;
@@ -371,6 +377,19 @@ export class DatawrapperMCPServer {
     );
 
     this.server.registerTool(
+      'export_visualization_png',
+      {
+        title: 'Export Datawrapper chart as PNG',
+        description: 'Export a Datawrapper chart as a PNG image and show it inline. Shows the current state, including unpublished changes. Use it when the user asks to see or download the chart as an image (e.g. for slides or print: zoom 2-4, plain for the graphic only, transparent background). create, update and publish already attach a small preview, so you do not need this just to check a change.',
+        inputSchema: ExportVisualizationPngSchema,
+        annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
+      },
+      async (args) => {
+        return await this.handleExportVisualizationPng(args as ExportVisualizationPngParams);
+      }
+    );
+
+    this.server.registerTool(
       'delete_visualization',
       {
         title: 'Delete Datawrapper chart',
@@ -386,7 +405,7 @@ export class DatawrapperMCPServer {
 
   private async handleCreateVisualization(params: CreateVisualizationParams): Promise<CallToolResult> {
     try {
-      const { api_key, data, chart_type, variant, map_type, base_color, thick, value_label_format, visualize_overrides, title, description, source_dataset_id, language, folder_id } = params;
+      const { api_key, data, chart_type, variant, map_type, base_color, thick, value_label_format, visualize_overrides, title, description, source_dataset_id, language, folder_id, preview } = params;
       const datawrapperClient = this.getAuthenticatedClient(api_key);
 
       // Validate map_type is provided for maps
@@ -559,14 +578,7 @@ ${JSON.stringify(sampleFeature, null, 2)}
 \`\`\``;
       }
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: responseText
-          }
-        ]
-      };
+      return await this.withPreview(responseText, datawrapperClient, chart.id, preview);
     } catch (error: any) {
       console.error('Error creating visualization:', error);
 
@@ -583,7 +595,7 @@ ${JSON.stringify(sampleFeature, null, 2)}
   }
 
   private async handleChoroplethMap(datawrapperClient: DatawrapperClient, params: CreateVisualizationParams): Promise<CallToolResult> {
-    const { data, basemap, region_column, value_column, base_color, thick, value_label_format, visualize_overrides, title, description, source_dataset_id, language, folder_id } = params;
+    const { data, basemap, region_column, value_column, base_color, thick, value_label_format, visualize_overrides, title, description, source_dataset_id, language, folder_id, preview } = params;
 
     // Choropleth maps require tabular data, not GeoJSON
     if (!Array.isArray(data)) {
@@ -736,19 +748,12 @@ ${JSON.stringify(sampleFeature, null, 2)}
       responseText += `\n\n⚠️ **Warnings:**\n${style.warnings.map(w => `- ${w}`).join('\n')}`;
     }
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: responseText
-        }
-      ]
-    };
+    return await this.withPreview(responseText, datawrapperClient, chart.id, preview);
   }
 
   private async handlePublishVisualization(params: PublishVisualizationParams): Promise<CallToolResult> {
     try {
-      const { api_key, chart_id } = params;
+      const { api_key, chart_id, preview } = params;
       const datawrapperClient = this.getAuthenticatedClient(api_key);
 
       if (!chart_id) {
@@ -783,14 +788,7 @@ ${JSON.stringify(sampleFeature, null, 2)}
 ${embedCode}
 [/CHART]`;
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: responseText
-          }
-        ]
-      };
+      return await this.withPreview(responseText, datawrapperClient, chart_id, preview);
     } catch (error: any) {
       console.error('Error publishing visualization:', error);
 
@@ -1040,7 +1038,7 @@ Note: changes made since the last publish only become public after calling \`pub
         api_key, chart_id, title, description, byline, source_name, source_url,
         base_color, thick, value_label_format, visualize_overrides, chart_type, variant, map_type, data,
         secondary_color, color_scale, language, notes, number_prepend, number_append, number_divisor, number_columns,
-        folder_id, transpose,
+        folder_id, transpose, preview,
       } = params;
       const datawrapperClient = this.getAuthenticatedClient(api_key);
 
@@ -1254,14 +1252,7 @@ ${changes.map(change => `- ${change}`).join('\n')}`;
 **IMPORTANT: Do NOT publish automatically.** Present the edit link to the user and ask: "Would you like me to publish this chart, or do you want to make more changes first?"`;
       }
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: responseText
-          }
-        ]
-      };
+      return await this.withPreview(responseText, datawrapperClient, chart_id, preview);
     } catch (error: any) {
       console.error('Error updating visualization:', error);
       return errorResult(error.message);
@@ -1388,6 +1379,69 @@ Datawrapper moves deleted charts to the trash and deletes them permanently after
         message = `Failed to delete: ${error.message}`;
       }
       return errorResult(message);
+    }
+  }
+
+  /**
+   * Build a tool result with the response text and, unless disabled, a PNG preview of the chart.
+   * The preview is best-effort: if the export fails or is too large, a short note replaces it.
+   */
+  private async withPreview(responseText: string, datawrapperClient: DatawrapperClient, chartId: string, enabled: boolean = true): Promise<CallToolResult> {
+    const content: CallToolResult['content'] = [{ type: 'text', text: responseText }];
+    if (!enabled) {
+      return { content };
+    }
+
+    try {
+      const png = await datawrapperClient.exportPng(chartId, { zoom: 1, timeoutMs: PREVIEW_TIMEOUT_MS });
+      if (png.length > MAX_PREVIEW_BYTES) {
+        content[0] = { type: 'text', text: `${responseText}\n\n_(No preview image: the PNG is too large to attach. Use \`export_visualization_png\` with a smaller width.)_` };
+      } else {
+        content.push({ type: 'image', data: png.toString('base64'), mimeType: 'image/png' });
+      }
+    } catch (error: any) {
+      console.error(`Preview export failed for chart ${chartId}:`, error.message);
+      content[0] = { type: 'text', text: `${responseText}\n\n_(No preview image: ${error.message})_` };
+    }
+    return { content };
+  }
+
+  private async handleExportVisualizationPng(params: ExportVisualizationPngParams): Promise<CallToolResult> {
+    try {
+      const { api_key, chart_id, width, height, plain, zoom, transparent, border_width, border_color } = params;
+      const datawrapperClient = this.getAuthenticatedClient(api_key);
+
+      if (!chart_id) {
+        throw new Error('chart_id is required');
+      }
+
+      console.error(`Exporting chart ${chart_id} as PNG...`);
+      const png = await datawrapperClient.exportPng(chart_id, {
+        width,
+        height,
+        plain,
+        zoom: zoom ?? 2,
+        transparent,
+        borderWidth: border_width,
+        borderColor: border_color,
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `🖼️ PNG export of chart ${chart_id} (${Math.round(png.length / 1024)} KB). It shows the chart's current state, including unpublished changes.`
+          },
+          {
+            type: 'image',
+            data: png.toString('base64'),
+            mimeType: 'image/png'
+          }
+        ]
+      };
+    } catch (error: any) {
+      console.error('Error exporting visualization:', error);
+      return errorResult(error.message);
     }
   }
 

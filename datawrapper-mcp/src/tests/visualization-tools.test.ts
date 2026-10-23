@@ -12,6 +12,8 @@ import { ChartLogger } from '../chart-logger.js';
 import { DatawrapperChart } from '../types.js';
 
 const API_KEY = 'test-token';
+// Tiny stand-in for an exported PNG (preview images are attached to create/update/publish responses)
+const PNG_BYTES = Buffer.from('89504e470d0a1a0a', 'hex');
 
 async function setup(): Promise<Client> {
   const server = new DatawrapperMCPServer(path.join(os.tmpdir(), `dw-test-${Date.now()}.ndjson`));
@@ -59,6 +61,8 @@ let client: Client;
 beforeEach(async () => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.spyOn(ChartLogger.prototype, 'logChart').mockResolvedValue();
+  // Never hit the network for previews; individual tests override this
+  vi.spyOn(DatawrapperClient.prototype, 'exportPng').mockResolvedValue(PNG_BYTES);
   client = await setup();
 });
 
@@ -68,13 +72,14 @@ afterEach(async () => {
 });
 
 describe('tool registration', () => {
-  it('registers all six tools with annotations', async () => {
+  it('registers all seven tools with annotations', async () => {
     const { tools } = await client.listTools();
     const byName = Object.fromEntries(tools.map(t => [t.name, t]));
 
     expect(Object.keys(byName).sort()).toEqual([
       'create_visualization',
       'delete_visualization',
+      'export_visualization_png',
       'get_visualization',
       'list_visualizations',
       'publish_visualization',
@@ -86,6 +91,7 @@ describe('tool registration', () => {
     expect(byName.update_visualization.annotations?.readOnlyHint).toBe(false);
     expect(byName.create_visualization.annotations?.destructiveHint).toBe(false);
     expect(byName.publish_visualization.annotations?.openWorldHint).toBe(true);
+    expect(byName.export_visualization_png.annotations?.readOnlyHint).toBe(true);
     expect(byName.delete_visualization.description).toMatch(/explicit confirmation/);
   });
 });
@@ -783,5 +789,92 @@ describe('folder and team errors', () => {
 
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain('No access to team "nope"');
+  });
+});
+
+describe('PNG previews', () => {
+  it('attaches a preview image to update responses', async () => {
+    vi.spyOn(DatawrapperClient.prototype, 'getChartInfo').mockResolvedValue(chart());
+    vi.spyOn(DatawrapperClient.prototype, 'updateChart').mockResolvedValue(chart());
+    const exportSpy = vi.spyOn(DatawrapperClient.prototype, 'exportPng').mockResolvedValue(PNG_BYTES);
+
+    const result: any = await client.callTool({ name: 'update_visualization', arguments: { api_key: API_KEY, chart_id: 'abc12', base_color: '#000000' } });
+
+    expect(exportSpy).toHaveBeenCalledWith('abc12', { zoom: 1, timeoutMs: 15000 });
+    expect(result.content[1]).toEqual({ type: 'image', data: PNG_BYTES.toString('base64'), mimeType: 'image/png' });
+  });
+
+  it('attaches previews to create and publish responses', async () => {
+    vi.spyOn(DatawrapperClient.prototype, 'createChart').mockResolvedValue(chart({ id: 'new01' }));
+    vi.spyOn(DatawrapperClient.prototype, 'uploadData').mockResolvedValue();
+    vi.spyOn(DatawrapperClient.prototype, 'publishChart').mockResolvedValue({ chart: chart({ id: 'new01', publicId: 'new01' }), version: 1 });
+    const exportSpy = vi.spyOn(DatawrapperClient.prototype, 'exportPng').mockResolvedValue(PNG_BYTES);
+
+    const created: any = await client.callTool({ name: 'create_visualization', arguments: { api_key: API_KEY, chart_type: 'bar', data: [{ a: 'x', b: 1 }] } });
+    const published: any = await client.callTool({ name: 'publish_visualization', arguments: { api_key: API_KEY, chart_id: 'new01' } });
+
+    expect(exportSpy).toHaveBeenCalledTimes(2);
+    expect(created.content[1].type).toBe('image');
+    expect(published.content[1].type).toBe('image');
+  });
+
+  it('skips the preview when preview is false', async () => {
+    vi.spyOn(DatawrapperClient.prototype, 'getChartInfo').mockResolvedValue(chart());
+    vi.spyOn(DatawrapperClient.prototype, 'updateChart').mockResolvedValue(chart());
+    const exportSpy = vi.spyOn(DatawrapperClient.prototype, 'exportPng');
+
+    const result: any = await client.callTool({ name: 'update_visualization', arguments: { api_key: API_KEY, chart_id: 'abc12', title: 'T', preview: false } });
+
+    expect(exportSpy).not.toHaveBeenCalled();
+    expect(result.content).toHaveLength(1);
+  });
+
+  it('still succeeds with a note when the preview export fails', async () => {
+    vi.spyOn(DatawrapperClient.prototype, 'getChartInfo').mockResolvedValue(chart());
+    vi.spyOn(DatawrapperClient.prototype, 'updateChart').mockResolvedValue(chart());
+    vi.spyOn(DatawrapperClient.prototype, 'exportPng').mockRejectedValue(new DatawrapperApiError('Failed to export chart as PNG: timeout of 15000ms exceeded'));
+
+    const result: any = await client.callTool({ name: 'update_visualization', arguments: { api_key: API_KEY, chart_id: 'abc12', title: 'T' } });
+
+    expect(result.isError).toBeFalsy();
+    expect(result.content).toHaveLength(1);
+    expect(textOf(result)).toContain('Chart updated in place');
+    expect(textOf(result)).toContain('No preview image: Failed to export chart as PNG');
+  });
+
+  it('skips oversized previews', async () => {
+    vi.spyOn(DatawrapperClient.prototype, 'getChartInfo').mockResolvedValue(chart());
+    vi.spyOn(DatawrapperClient.prototype, 'updateChart').mockResolvedValue(chart());
+    vi.spyOn(DatawrapperClient.prototype, 'exportPng').mockResolvedValue(Buffer.alloc(1_000_001));
+
+    const result: any = await client.callTool({ name: 'update_visualization', arguments: { api_key: API_KEY, chart_id: 'abc12', title: 'T' } });
+
+    expect(result.content).toHaveLength(1);
+    expect(textOf(result)).toContain('too large');
+  });
+});
+
+describe('export_visualization_png', () => {
+  it('passes export options and returns the image', async () => {
+    const exportSpy = vi.spyOn(DatawrapperClient.prototype, 'exportPng').mockResolvedValue(PNG_BYTES);
+
+    const result: any = await client.callTool({
+      name: 'export_visualization_png',
+      arguments: { api_key: API_KEY, chart_id: 'abc12', width: 800, plain: true, transparent: true, border_width: 10, border_color: '#ffffff' },
+    });
+
+    expect(exportSpy).toHaveBeenCalledWith('abc12', { width: 800, height: undefined, plain: true, zoom: 2, transparent: true, borderWidth: 10, borderColor: '#ffffff' });
+    expect(result.content[1]).toEqual({ type: 'image', data: PNG_BYTES.toString('base64'), mimeType: 'image/png' });
+  });
+
+  it('rejects invalid chart IDs and zoom values before calling the API', async () => {
+    const exportSpy = vi.spyOn(DatawrapperClient.prototype, 'exportPng');
+
+    const badId: any = await client.callTool({ name: 'export_visualization_png', arguments: { api_key: API_KEY, chart_id: '../x' } });
+    const badZoom: any = await client.callTool({ name: 'export_visualization_png', arguments: { api_key: API_KEY, chart_id: 'abc12', zoom: 10 } });
+
+    expect(badId.isError).toBe(true);
+    expect(badZoom.isError).toBe(true);
+    expect(exportSpy).not.toHaveBeenCalled();
   });
 });
