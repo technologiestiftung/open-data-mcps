@@ -44,7 +44,7 @@ const StyleFields = {
     'Optional second color. Range plots: color of the range end (base_color colors the start).'
   ),
   color_scale: z.array(HexColorSchema).min(2).optional().describe(
-    'Optional choropleth map gradient: 2+ hex colors from lowest to highest value, e.g. ["#e8f5e9", "#2E7D32"]. Without it, base_color produces a light-to-dark gradient of that color.'
+    'Optional gradient: 2+ hex colors from lowest to highest value, e.g. ["#e8f5e9", "#2E7D32"]. For choropleth maps and symbol maps with a numeric color_column. Without it, base_color produces a light-to-dark gradient of that color.'
   ),
   language: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'language must be a locale like "de-DE" or "en-US"').optional().describe(
     'Optional chart locale for number/date formatting and footer texts, e.g. "de-DE" (397.000,5) or "en-US" (397,000.5). Datawrapper defaults to "en-US".'
@@ -64,6 +64,15 @@ const StyleFields = {
   number_columns: z.array(z.string()).optional().describe(
     'Optional column names the number_prepend/number_append/number_divisor options apply to. Default: all numeric columns.'
   ),
+  color_column: z.string().optional().describe(
+    'Symbol maps only: column (GeoJSON property) that colors the points. A text column (e.g. "typ") colors points by category and shows a legend; a numeric column gets a color gradient (choose colors with color_scale or base_color).'
+  ),
+  category_colors: z.record(z.string(), HexColorSchema).optional().describe(
+    'Symbol maps only: colors per category of a text color_column, e.g. {"Feuerwache": "#e41a1c", "Rettungswache": "#377eb8"}. Categories without a color get the default palette.'
+  ),
+  size_column: z.string().optional().describe(
+    'Symbol maps only: numeric column (GeoJSON property) that scales the point size.'
+  ),
   folder_id: z.number().int().optional().describe(
     'Optional Datawrapper folder ID to put the chart in (if the folder belongs to a team, the chart moves into that team). The ID is the number at the end of the folder URL in the Datawrapper archive, e.g. 455751 in app.datawrapper.de/.../archive/455751.'
   ),
@@ -72,7 +81,7 @@ const StyleFields = {
 export const CreateVisualizationSchema = z.object({
   api_key: ApiKeySchema,
   data: z.any().describe(
-    'Array of data objects. For choropleth maps: tabular data with region IDs/names. For symbol maps: GeoJSON FeatureCollection.'
+    'Array of data objects. For choropleth maps: tabular data with region IDs/names. For symbol maps: GeoJSON FeatureCollection of Point features (all properties are kept as columns, e.g. for color_column).'
   ),
   chart_type: ChartTypeSchema.describe('Type of visualization to create'),
   variant: VariantSchema.optional().describe(

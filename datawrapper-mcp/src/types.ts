@@ -60,6 +60,9 @@ export interface ChartStyleParams {
   number_divisor?: number;
   number_columns?: string[];
   folder_id?: number;
+  color_column?: string;
+  category_colors?: Record<string, string>;
+  size_column?: string;
 }
 
 export interface CreateVisualizationParams extends ChartStyleParams {

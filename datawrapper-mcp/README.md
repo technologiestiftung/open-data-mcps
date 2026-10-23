@@ -16,7 +16,7 @@ MCP server for creating and managing data visualizations using the Datawrapper A
   - **Pie & Donut Charts**: Part-to-whole visualizations
   - **Election Donuts**: Parliament-style seat distribution charts
   - **Tables**: Formatted data tables
-  - **Maps**: GeoJSON visualization (symbol maps, choropleth)
+  - **Maps**: GeoJSON point maps (symbol maps, colored and sized by any property) and Berlin choropleth maps
 - **Managing existing charts**:
   - **List** all charts of your account with search, folder/team filters and pagination
   - **Inspect** a chart's metadata, publish status, public URL, embed code and data
@@ -274,6 +274,22 @@ The tool never publishes. If the chart was already published, the response says 
 }
 ```
 
+### Symbol maps
+
+Pass a GeoJSON FeatureCollection of Point features. All feature properties are uploaded as data columns (plus `latitude`/`longitude`), so they can be used for colors (`color_column`), sizes (`size_column`) and in tooltips. Non-point features are skipped with a warning.
+
+Maps created with earlier versions of this server only stored `name`, `latitude` and `longitude`. To color such a map by a property, pass the full GeoJSON again as `data` together with `color_column` in one `update_visualization` call:
+
+```javascript
+{
+  api_key: "your_datawrapper_api_token_here",
+  chart_id: "aBcDe",
+  data: { type: "FeatureCollection", features: [ /* points with properties incl. "typ" */ ] },
+  color_column: "typ",
+  category_colors: { "Feuerwache": "#e41a1c", "Rettungswache": "#377eb8", "Polizei": "#ff7f00" }
+}
+```
+
 ### Styling options
 
 Shared by `create_visualization` and `update_visualization`. Datawrapper reads colors from different settings per chart type; the tools write them to the right place:
@@ -287,6 +303,9 @@ Shared by `create_visualization` and `update_visualization`. Datawrapper reads c
 | `language` | Chart locale, e.g. `"de-DE"` for German number formatting (`397.000,5`) and German footer texts. Datawrapper defaults to `"en-US"` |
 | `notes` | Notes shown below the chart |
 | `number_prepend`, `number_append`, `number_divisor` | Text before/after numbers and a power-of-ten divisor (`3` = thousands). Datawrapper only applies these per column, so they are set for `number_columns` (default: all numeric columns) |
+| `color_column` | Symbol maps: property that colors the points. A text column (e.g. `typ`) colors by category and shows a legend; a numeric column gets a gradient (`color_scale` or `base_color`) |
+| `category_colors` | Symbol maps: color per category of a text `color_column`, e.g. `{ "Feuerwache": "#e41a1c" }`. Other categories get the default palette. Without `color_column` in an update, it recolors the map's current color column |
+| `size_column` | Symbol maps: numeric property that scales the point size |
 | `folder_id` | Put the chart into a Datawrapper folder (and into that folder's team, if it belongs to one). The ID is the number at the end of the folder URL in the archive, e.g. `455751` in `app.datawrapper.de/…/archive/455751`. Unknown or inaccessible folders return a clear error and nothing is changed |
 
 ```javascript
@@ -373,6 +392,7 @@ datawrapper-mcp/
 │   ├── basemap-matcher.test.ts # Unit tests for basemap matcher
 │   ├── datawrapper-client.test.ts # API client tests (mocked axios)
 │   ├── style-options.test.ts # Styling helper tests
+│   ├── symbol-maps.test.ts   # Symbol map data conversion and color/size columns
 │   ├── visualization-tools.test.ts # list/get/update/delete tool tests (in-memory MCP client)
 │   └── test-choropleth-integration.ts # Choropleth integration tests
 ├── dist/                     # Compiled JavaScript

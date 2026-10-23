@@ -504,10 +504,9 @@ export class ChartBuilder {
   /**
    * Convert data to CSV format for Datawrapper
    */
-  formatForDatawrapper(data: Array<Record<string, any>>): string {
+  formatForDatawrapper(data: Array<Record<string, any>>, columns: string[] = Object.keys(data[0] || {})): string {
     if (data.length === 0) return '';
 
-    const columns = Object.keys(data[0]);
     const header = columns.join(',');
 
     const rows = data.map(row => {
@@ -544,29 +543,47 @@ export class ChartBuilder {
    * Convert GeoJSON to CSV format for symbol maps
    */
   private convertGeoJSONToCSV(geojson: GeoJSON): string {
-    const rows: string[] = [];
+    const { columns, rows } = this.geoJSONToRows(geojson);
+    return this.formatForDatawrapper(rows, columns);
+  }
 
-    // Header row
-    rows.push('name,latitude,longitude');
+  /**
+   * Flatten GeoJSON point features into table rows: every feature property plus latitude/longitude.
+   * Keeping all properties lets symbol maps color, size and label points by any attribute.
+   * Non-point features are skipped and counted.
+   */
+  geoJSONToRows(geojson: GeoJSON): { columns: string[]; rows: Array<Record<string, any>>; skipped: number } {
+    const columns: string[] = [];
+    const rows: Array<Record<string, any>> = [];
+    let skipped = 0;
 
-    // Data rows
     for (const feature of geojson.features) {
-      if (feature.geometry.type === 'Point') {
-        const coords = feature.geometry.coordinates as [number, number];
-        const name = feature.properties?.name || 'Unnamed';
-        const lon = coords[0];
-        const lat = coords[1];
-
-        // Escape name if it contains commas or quotes
-        const escapedName = name.includes(',') || name.includes('"')
-          ? `"${name.replace(/"/g, '""')}"`
-          : name;
-
-        rows.push(`${escapedName},${lat},${lon}`);
+      if (feature.geometry?.type !== 'Point') {
+        skipped++;
+        continue;
       }
+      const [lon, lat] = feature.geometry.coordinates as [number, number];
+      const row: Record<string, any> = {};
+      for (const [key, value] of Object.entries(feature.properties || {})) {
+        if (key === 'latitude' || key === 'longitude') {
+          continue;
+        }
+        // Nested values (objects/arrays) become JSON text so they survive the CSV upload
+        row[key] = value !== null && typeof value === 'object' ? JSON.stringify(value) : value;
+        if (!columns.includes(key)) {
+          columns.push(key);
+        }
+      }
+      row.latitude = lat;
+      row.longitude = lon;
+      rows.push(row);
     }
 
-    return rows.join('\n');
+    if (rows.length === 0) {
+      throw new Error('Symbol maps need GeoJSON Point features, but none were found. Convert lines/polygons to points (e.g. their centroids) first.');
+    }
+
+    return { columns: [...columns, 'latitude', 'longitude'], rows, skipped };
   }
 
   /**

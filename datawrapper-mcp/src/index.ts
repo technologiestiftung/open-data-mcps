@@ -29,8 +29,10 @@ import { BasemapMatcher } from './basemap-matcher.js';
 import {
   buildColorSettings,
   buildColumnFormat,
+  buildSymbolColumnSettings,
   detectNumericColumnsFromCsv,
   hasNumberFormat,
+  parseDelimited,
   usesTransposedLayout,
 } from './style-options.js';
 import {
@@ -233,6 +235,15 @@ function withFolderOrTeamContext(error: any, context: { folderId?: number; teamI
 }
 
 /**
+ * True if any symbol-map-only option is set
+ */
+function hasSymbolColumnOptions(params: ChartStyleParams): boolean {
+  return params.color_column !== undefined || params.category_colors !== undefined || params.size_column !== undefined;
+}
+
+const SYMBOL_OPTIONS_IGNORED = 'color_column, category_colors and size_column only apply to symbol maps and were ignored.';
+
+/**
  * Format detection response for choropleth map auto-detection
  */
 function formatDetectionResponse(detection: DetectionResult): string {
@@ -315,7 +326,7 @@ export class DatawrapperMCPServer {
       'create_visualization',
       {
         title: 'Create Datawrapper chart',
-        description: 'Create a NEW data visualization using the Datawrapper API. To change an existing chart (colors, title, description, data, type), use `update_visualization` instead - it keeps the chart ID. The chart is NOT published automatically - use `publish_visualization` after the user approves it. Supports bar, column, line, area, scatter, dot, range, arrow, pie, donut, election-donut, table, and map charts. Use "variant" for bar (basic/stacked/split) and column (basic/grouped/stacked) charts. **For maps, map_type is REQUIRED**: "d3-maps-symbols" (points with GeoJSON) or "d3-maps-choropleth" (regions with tabular data). **For choropleth maps**: provide tabular data with Berlin region identifiers (Bezirke, Prognoseräume, Bezirksregionen, or Planungsräume). If basemap is not specified, the tool will auto-detect and return available options. Optional styling: base_color (also colors map points / the choropleth gradient), secondary_color (range end), color_scale (choropleth), language (e.g. "de-DE" for German number formatting), notes, number_prepend/number_append/number_divisor, folder_id. Returns an edit URL where the user can preview and adjust the chart before publishing.',
+        description: 'Create a NEW data visualization using the Datawrapper API. To change an existing chart (colors, title, description, data, type), use `update_visualization` instead - it keeps the chart ID. The chart is NOT published automatically - use `publish_visualization` after the user approves it. Supports bar, column, line, area, scatter, dot, range, arrow, pie, donut, election-donut, table, and map charts. Use "variant" for bar (basic/stacked/split) and column (basic/grouped/stacked) charts. **For maps, map_type is REQUIRED**: "d3-maps-symbols" (points with GeoJSON) or "d3-maps-choropleth" (regions with tabular data). **For symbol maps**: pass a GeoJSON FeatureCollection of Point features; all feature properties are kept as data columns, so points can be colored by a property with color_column (text = categories with legend, colors via category_colors; numeric = gradient) and sized with size_column. **For choropleth maps**: provide tabular data with Berlin region identifiers (Bezirke, Prognoseräume, Bezirksregionen, or Planungsräume). If basemap is not specified, the tool will auto-detect and return available options. Optional styling: base_color (also colors map points / the choropleth gradient), secondary_color (range end), color_scale (choropleth), language (e.g. "de-DE" for German number formatting), notes, number_prepend/number_append/number_divisor, folder_id. Returns an edit URL where the user can preview and adjust the chart before publishing.',
         inputSchema: CreateVisualizationSchema,
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
       },
@@ -367,7 +378,7 @@ export class DatawrapperMCPServer {
       'update_visualization',
       {
         title: 'Update Datawrapper chart',
-        description: 'Modify an existing Datawrapper chart in place - the chart keeps its ID, edit URL and embed codes. Use this for small changes such as colors (base_color, secondary_color for range ends, color_scale for choropleth maps, visualize_overrides e.g. custom-colors), title, description, byline, source, notes, language/locale (e.g. "de-DE" for German number formatting), number prefix/suffix/divisor, value label format, folder, chart type/variant, transpose, or to replace the dataset (data). Provide at least one change; only the given fields change. Changes are NOT published automatically: if the chart was already published, its public version and embeds keep showing the old state until `publish_visualization` is called again - ask the user before republishing.',
+        description: 'Modify an existing Datawrapper chart in place - the chart keeps its ID, edit URL and embed codes. Use this for small changes such as colors (base_color, secondary_color for range ends, color_scale for choropleth maps, visualize_overrides e.g. custom-colors), title, description, byline, source, notes, symbol map color/size columns (color_column, category_colors, size_column), language/locale (e.g. "de-DE" for German number formatting), number prefix/suffix/divisor, value label format, folder, chart type/variant, transpose, or to replace the dataset (data). Provide at least one change; only the given fields change. Changes are NOT published automatically: if the chart was already published, its public version and embeds keep showing the old state until `publish_visualization` is called again - ask the user before republishing.',
         inputSchema: UpdateVisualizationSchema,
         annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
       },
@@ -416,6 +427,10 @@ export class DatawrapperMCPServer {
       // Handle choropleth maps separately
       if (chart_type === 'map' && map_type === 'd3-maps-choropleth') {
         return await this.handleChoroplethMap(datawrapperClient, params);
+      }
+
+      if (chart_type === 'map' && Array.isArray(data)) {
+        throw new Error('Symbol maps need a GeoJSON FeatureCollection of Point features (with all attributes as properties), not an array of rows.');
       }
 
       // Validate data structure for the chart type
@@ -505,6 +520,20 @@ export class DatawrapperMCPServer {
         metadata.visualize.basemap = config.basemap;
         metadata.visualize['map-type'] = 'map-symbol';
         metadata.visualize['fitcontent'] = false;
+      }
+
+      // Symbol maps: explicit coordinate columns plus optional color/size columns, checked before anything is created
+      if (dwChartType === 'd3-maps-symbols') {
+        const table = this.chartBuilder.geoJSONToRows(data as GeoJSON);
+        const symbol = buildSymbolColumnSettings(params, table);
+        metadata.axes = { lat: 'latitude', lon: 'longitude', ...symbol.axes };
+        metadata.visualize = { ...metadata.visualize, ...symbol.visualize, ...(visualize_overrides || {}) };
+        style.warnings.push(...symbol.warnings);
+        if (table.skipped > 0) {
+          style.warnings.push(`${table.skipped} non-point feature(s) were skipped: symbol maps only show Point geometries.`);
+        }
+      } else if (hasSymbolColumnOptions(params)) {
+        style.warnings.push(SYMBOL_OPTIONS_IGNORED);
       }
 
       // Create chart
@@ -656,6 +685,9 @@ ${JSON.stringify(sampleFeature, null, 2)}
 
     // Colors (gradient from base_color or color_scale), notes and number formats for the value column
     const style = buildStyleMetadata('d3-maps-choropleth', params, [valueCol]);
+    if (hasSymbolColumnOptions(params)) {
+      style.warnings.push(SYMBOL_OPTIONS_IGNORED);
+    }
 
     // Build metadata for choropleth map
     const chartTitle = title || `${level.label} Map`;
@@ -1038,7 +1070,7 @@ Note: changes made since the last publish only become public after calling \`pub
         api_key, chart_id, title, description, byline, source_name, source_url,
         base_color, thick, value_label_format, visualize_overrides, chart_type, variant, map_type, data,
         secondary_color, color_scale, language, notes, number_prepend, number_append, number_divisor, number_columns,
-        folder_id, transpose, preview,
+        folder_id, transpose, preview, color_column, category_colors, size_column,
       } = params;
       const datawrapperClient = this.getAuthenticatedClient(api_key);
 
@@ -1050,9 +1082,10 @@ Note: changes made since the last publish only become public after calling \`pub
       const hasChanges = [
         title, description, byline, source_name, source_url, base_color, thick, value_label_format, chart_type, variant, map_type, data,
         secondary_color, color_scale, language, notes, number_prepend, number_append, number_divisor, folder_id, transpose,
+        color_column, category_colors, size_column,
       ].some(value => value !== undefined) || hasOverrides;
       if (!hasChanges) {
-        throw new Error('No changes specified. Provide at least one of: title, description, byline, source_name, source_url, notes, language, folder_id, base_color, secondary_color, color_scale, thick, value_label_format, number_prepend, number_append, number_divisor, visualize_overrides, chart_type (+ variant / map_type), transpose, data.');
+        throw new Error('No changes specified. Provide at least one of: title, description, byline, source_name, source_url, notes, language, folder_id, base_color, secondary_color, color_scale, thick, value_label_format, number_prepend, number_append, number_divisor, color_column, category_colors, size_column, visualize_overrides, chart_type (+ variant / map_type), transpose, data.');
       }
       if (number_columns !== undefined && !hasNumberFormat(params)) {
         throw new Error('number_columns needs at least one of number_prepend, number_append or number_divisor.');
@@ -1110,6 +1143,30 @@ Note: changes made since the last publish only become public after calling \`pub
       }
       const style = buildStyleMetadata(targetType, params, numericColumns);
 
+      // Symbol maps: color/size columns are checked against the new data, or else the data stored in Datawrapper.
+      // category_colors / color_scale alone recolor the map's current color column.
+      let symbol: ReturnType<typeof buildSymbolColumnSettings> | undefined;
+      if (targetType === 'd3-maps-symbols') {
+        const colorColumn = color_column
+          ?? (category_colors !== undefined || color_scale !== undefined ? currentMetadata.axes?.values : undefined);
+        if (colorColumn !== undefined || hasSymbolColumnOptions(params)) {
+          const table = data !== undefined
+            ? this.chartBuilder.geoJSONToRows(data as GeoJSON)
+            : parseDelimited(await datawrapperClient.getChartData(chart_id));
+          try {
+            symbol = buildSymbolColumnSettings({ color_column: colorColumn, category_colors, size_column, color_scale, base_color }, table);
+          } catch (error: any) {
+            if (data === undefined && /is not a column/.test(error.message)) {
+              throw new Error(`${error.message} If the column exists in your source data, pass the full GeoJSON as \`data\` in the same call: maps created with an earlier version of this server only stored name and coordinates.`);
+            }
+            throw error;
+          }
+          style.warnings.push(...symbol.warnings);
+        }
+      } else if (hasSymbolColumnOptions(params)) {
+        style.warnings.push(SYMBOL_OPTIONS_IGNORED);
+      }
+
       // Build the PATCH body. Datawrapper merges nested metadata objects server-side,
       // so only the changed keys are sent and all other settings stay untouched.
       const update: DatawrapperChartUpdate = {};
@@ -1153,7 +1210,7 @@ Note: changes made since the last publish only become public after calling \`pub
       }
 
       // base-color and the type-specific color keys (map colors, range end color) come from style
-      const visualize: Record<string, any> = { ...style.visualize };
+      const visualize: Record<string, any> = { ...style.visualize, ...(symbol?.visualize || {}) };
       if (thick !== undefined) {
         visualize['thick'] = thick;
       }
@@ -1165,7 +1222,7 @@ Note: changes made since the last publish only become public after calling \`pub
       for (const [key, value] of Object.entries(visualize)) {
         changes.push(`\`${key}\` → ${truncate(JSON.stringify(value), 120)}`);
       }
-      changes.push(...style.changes);
+      changes.push(...style.changes, ...(symbol?.changes || []));
 
       // Grouped/stacked column charts need transposed data; switching into or out of them adjusts it
       const dataSettings: Record<string, any> = { ...style.data };
@@ -1189,6 +1246,14 @@ Note: changes made since the last publish only become public after calling \`pub
       }
       if (Object.keys(style.annotate).length > 0) {
         metadataPatch.annotate = style.annotate;
+      }
+      // Replaced symbol map data always has latitude/longitude columns; set them explicitly with any color/size column
+      const axes: Record<string, string> = {
+        ...(targetType === 'd3-maps-symbols' && data !== undefined ? { lat: 'latitude', lon: 'longitude' } : {}),
+        ...(symbol?.axes || {}),
+      };
+      if (Object.keys(axes).length > 0) {
+        metadataPatch.axes = axes;
       }
       if (Object.keys(metadataPatch).length > 0) {
         update.metadata = metadataPatch;
@@ -1275,9 +1340,16 @@ ${changes.map(change => `- ${change}`).join('\n')}`;
 
     // Symbol maps take GeoJSON points
     if (targetType === 'd3-maps-symbols') {
+      if (Array.isArray(data)) {
+        throw new Error('Replacement data for symbol maps must be a GeoJSON FeatureCollection of Point features (with all attributes as properties).');
+      }
       const geojson = data as GeoJSON;
       this.chartBuilder.validateData(geojson, 'map');
       this.chartBuilder.inferChartConfig(geojson, 'map');
+      const { skipped } = this.chartBuilder.geoJSONToRows(geojson);
+      if (skipped > 0) {
+        warnings.push(`${skipped} non-point feature(s) were skipped: symbol maps only show Point geometries.`);
+      }
       return {
         dataString: this.chartBuilder.processGeoJSON(geojson, 'd3-maps-symbols'),
         rowCount: geojson.features.length,
