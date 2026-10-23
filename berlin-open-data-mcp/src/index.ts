@@ -12,7 +12,7 @@ import { DataFetcher } from './data-fetcher.js';
 import { DataSampler } from './data-sampler.js';
 import { GeoJSONTransformer } from './geojson-transformer.js';
 import { LORLookupService } from './lor-lookup.js';
-import { WFSClient } from './wfs-client.js';
+import { WFSClient, isClientSafeWFSError } from './wfs-client.js';
 import {
   SearchDatasetsSchema,
   SearchFilteredSchema,
@@ -1088,6 +1088,26 @@ ${JSON.stringify(sample.sampleRows, null, 2)}
     }
   }
 
+  /**
+   * Errors from allowlisted WFS services (HTTP status, OGC exception) are passed on to the client.
+   * Anything else (e.g. network errors) only goes to the server log, the client gets a generic message.
+   */
+  private wfsErrorResult(toolName: string, error: unknown): CallToolResult {
+    console.error(`[${toolName}] WFS request failed:`, error);
+    if (isClientSafeWFSError(error)) {
+      return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
+    }
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Error: The WFS request failed. Check that wfs_url and typename are correct (use `list_geo_layers` to look them up) and try again.',
+        },
+      ],
+      isError: true,
+    };
+  }
+
   private async handleListGeoLayers(params: z.infer<typeof ListGeoLayersSchema>): Promise<CallToolResult> {
     try {
       const { dataset_id } = params;
@@ -1109,8 +1129,12 @@ ${JSON.stringify(sample.sampleRows, null, 2)}
       const { baseUrl, preservedParams } = this.wfsClient.parseWFSUrl(wfsResource.url);
       const capabilities = await this.wfsClient.getCapabilities(baseUrl, preservedParams);
 
+      // Keep non-WFS params (like energieatlas' nodeId), fetch_geo_features needs them
+      const query = preservedParams.toString();
+      const wfsUrl = query ? `${baseUrl}?${query}` : baseUrl;
+
       let responseText = `# Available Geo Layers for: ${dataset.title}\n\n`;
-      responseText += `**WFS URL**: ${baseUrl}\n\n`;
+      responseText += `**WFS URL**: ${wfsUrl}\n\n`;
 
       for (const ft of capabilities.featureTypes) {
         responseText += `### ${ft.title}\n`;
@@ -1127,10 +1151,7 @@ ${JSON.stringify(sample.sampleRows, null, 2)}
 
       return { content: [{ type: 'text', text: responseText }] };
     } catch (error) {
-      return {
-        content: [{ type: 'text', text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
-        isError: true,
-      };
+      return this.wfsErrorResult('list_geo_layers', error);
     }
   }
 
@@ -1167,10 +1188,7 @@ ${JSON.stringify(sample.sampleRows, null, 2)}
 
       return { content: [{ type: 'text', text: responseText }] };
     } catch (error) {
-      return {
-        content: [{ type: 'text', text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
-        isError: true,
-      };
+      return this.wfsErrorResult('fetch_geo_features', error);
     }
   }
 

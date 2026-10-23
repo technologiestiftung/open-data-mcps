@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx';
 import { BrowserFetcher } from './browser-fetcher.js';
 import { DOMParser } from '@xmldom/xmldom';
 import * as toGeoJSON from '@tmcw/togeojson';
-import { WFSClient } from './wfs-client.js';
+import { WFSClient, isClientSafeWFSError } from './wfs-client.js';
 
 export interface FetchedData {
   format: string;
@@ -666,12 +666,14 @@ export class DataFetcher {
         originalGeoJSON: geojson, // Preserve original GeoJSON for proper downloads
       };
     } catch (error) {
+      // Only errors from allowlisted services go to the client, other details only to the server log
+      console.error('[DataFetcher] WFS fetch error:', error);
       return {
         format: 'WFS',
         rows: [],
         totalRows: 0,
         columns: [],
-        error: `WFS fetch error: ${error instanceof Error ? error.message : String(error)}`,
+        error: `WFS fetch error: ${isClientSafeWFSError(error) ? error.message : 'the WFS service request failed'}`,
       };
     }
   }
