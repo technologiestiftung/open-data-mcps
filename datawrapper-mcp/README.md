@@ -1,6 +1,6 @@
 # Datawrapper MCP Server
 
-MCP server for creating data visualizations using the Datawrapper API. Enables automatic chart creation from Berlin open data through conversational AI.
+MCP server for creating and managing data visualizations using the Datawrapper API. Enables automatic chart creation from Berlin open data through conversational AI.
 
 ## Features
 
@@ -17,6 +17,11 @@ MCP server for creating data visualizations using the Datawrapper API. Enables a
   - **Election Donuts**: Parliament-style seat distribution charts
   - **Tables**: Formatted data tables
   - **Maps**: GeoJSON visualization (symbol maps, choropleth)
+- **Managing existing charts**:
+  - **List** all charts of your account with search, folder/team filters and pagination
+  - **Inspect** a chart's metadata, publish status, public URL, embed code and data
+  - **Update** charts in place (colors, title, description, source, type, data) without getting a new chart ID
+  - **Delete** charts (moved to the Datawrapper trash for 30 days)
 - **Smart Defaults**: Automatic titles, labels, and axes from data structure
 - **Provenance Tracking**: JSON log of created charts with source dataset links
 
@@ -51,7 +56,7 @@ The HTTP server exposes:
 
 ### Authentication
 
-This MCP server is stateless. Pass your Datawrapper API token as `api_key` on every `create_visualization` and `publish_visualization` call.
+This MCP server is stateless. Pass your Datawrapper API token as `api_key` on every tool call.
 
 To get a Datawrapper API token:
 
@@ -59,6 +64,8 @@ To get a Datawrapper API token:
    - Create account at https://app.datawrapper.de/
    - Navigate to Settings → API Tokens
    - Create new token with permissions: `chart:read`, `chart:write`, `theme:read` and `visualization:read`
+
+These scopes cover all tools: listing and reading charts need `chart:read`, updating and deleting need `chart:write`, and publishing needs all four. Existing tokens with these scopes do not need to be changed.
 
 ## MCP Tools
 
@@ -79,6 +86,9 @@ Create a data visualization using Datawrapper.
 - `title` (optional): Chart title (auto-generated if omitted)
 - `description` (optional): Chart description/byline
 - `source_dataset_id` (optional): Berlin dataset ID for tracking
+- Styling options (optional): see [Styling options](#styling-options)
+
+Grouped and stacked column charts are created with transposed data, so the first column (e.g. years) becomes the x-axis and the other columns become the colored series.
 
 **Supported Chart Types**:
 
@@ -156,7 +166,153 @@ Publish a previously created chart.
 
 **Parameters**:
 - `api_key` (required): Your Datawrapper API token
-- `chart_id` (required): The chart ID returned from `create_visualization`
+- `chart_id` (required): The chart ID returned from `create_visualization` (or found via `list_visualizations`). Chart IDs have exactly 5 letters or digits (e.g. `aBcDe`); all tools reject other values
+
+Also use it to republish a chart after `update_visualization`: edits only change the draft, and the public version and embeds keep showing the old state until the chart is published again. The chart ID stays the same, and Datawrapper increments the public version number.
+
+### `list_visualizations`
+
+List the charts in your Datawrapper account (read-only).
+
+**Parameters**:
+- `api_key` (required): Your Datawrapper API token
+- `search` (optional): Search term (matches the title and some descriptive fields)
+- `folder_id` (optional): Only charts in this folder
+- `team_id` (optional): Only charts of this team. Pass it if team charts are missing from the default list
+- `published` (optional): `true` for published charts only; omit it for all charts. The Datawrapper API has no "unpublished only" filter, so `false` is applied locally to the returned page only (the page can then hold fewer charts than `limit`, and the response says so)
+- `order_by` (optional): `createdAt`, `lastModifiedAt`, `publishedAt`, `title` or `type`
+- `order` (optional): `ASC` or `DESC` (default `DESC`)
+- `limit` (optional): Number of charts per page (default 25, capped at 100)
+- `offset` (optional): Number of charts to skip, for pagination (default 0)
+
+Each entry shows ID, title, type, publish status with public URL, edit URL, last modified time and folder. When more charts exist, the response tells you which `offset` to use next.
+
+```javascript
+{
+  api_key: "your_datawrapper_api_token_here",
+  search: "Bezirk",
+  published: true,
+  order_by: "lastModifiedAt",
+  limit: 10
+}
+```
+
+### `get_visualization`
+
+Get the details of one chart (read-only).
+
+**Parameters**:
+- `api_key` (required): Your Datawrapper API token
+- `chart_id` (required): The chart ID
+- `include_data` (optional): Also return the current dataset as CSV (at most 50 lines / 5,000 characters)
+- `include_metadata` (optional): Also return the raw Datawrapper metadata JSON (at most 8,000 characters)
+
+Returns title, type, edit URL, created/modified timestamps, folder, publish status, public URL and embed code (if published), description/byline/source, key visualize settings (e.g. `base-color`, `custom-colors`) and axes.
+
+```javascript
+{
+  api_key: "your_datawrapper_api_token_here",
+  chart_id: "aBcDe",
+  include_data: true
+}
+```
+
+### `update_visualization`
+
+Modify an existing chart in place. The chart keeps its ID, edit URL and embed codes, so small changes no longer require creating a new chart.
+
+**Parameters**:
+- `api_key` (required): Your Datawrapper API token
+- `chart_id` (required): The chart ID
+- At least one of:
+  - `title`, `description`, `byline`, `source_name`, `source_url`
+  - `base_color`, `thick`, `value_label_format`
+  - Any of the [styling options](#styling-options): `secondary_color`, `color_scale`, `language`, `notes`, `number_prepend`, `number_append`, `number_divisor` (+ `number_columns`), `folder_id`
+  - `transpose`: Swap rows and columns. Switching to or from a grouped/stacked column chart sets this automatically; pass it to fix older grouped/stacked column charts whose x-axis shows the series names
+  - `visualize_overrides`: Advanced `metadata.visualize` changes (applied after `base_color`/`thick`/`value_label_format`)
+  - `chart_type` + `variant`: Change the chart type (e.g. column to stacked column). If `variant` is omitted and `chart_type` is the chart's current family, the current variant (e.g. stacked) is kept. Converting between charts and maps, and between map types (symbol, choropleth, locator), is not supported: create a new map instead
+  - `data`: Replace the whole dataset. It is validated against the chart type first. For choropleth maps it must keep the map's region and value columns. Not supported for chart types this server does not create (e.g. locator maps)
+
+Only the given fields change. The tool sends a partial `PATCH /charts/{id}`, and Datawrapper deep-merges nested metadata objects, so other settings are kept:
+
+- Objects such as `custom-colors` (a label-to-color map) are merged key by key. Setting `{ "Pankow": "#..." }` keeps an existing `Mitte` color.
+- Arrays and plain values (e.g. `base-color`) replace the stored value.
+- To clear an object, pass an empty object, e.g. `"custom-colors": {}`. To replace a color map completely, clear it first and set the new colors in a second call.
+- `null` sets a value to `null` but does not remove the key.
+
+The last two points are inferred from the archived Datawrapper API source, not from the official API docs.
+
+If the call also replaces `data` and the data upload fails after the other changes were saved, the error lists the saved changes and says that the data was not replaced, so only the data upload needs to be retried.
+
+The tool never publishes. If the chart was already published, the response says that the public version is unchanged until `publish_visualization` is called again.
+
+```javascript
+// Change the color of an existing chart
+{
+  api_key: "your_datawrapper_api_token_here",
+  chart_id: "aBcDe",
+  base_color: "#E63946",
+  visualize_overrides: {
+    "custom-colors": { "Mitte": "#1D3557" }
+  }
+}
+
+// Replace the data and title
+{
+  api_key: "your_datawrapper_api_token_here",
+  chart_id: "aBcDe",
+  title: "Population by District (2025)",
+  data: [
+    { district: "Mitte", population: 397000 },
+    { district: "Pankow", population: 418000 }
+  ]
+}
+```
+
+### Styling options
+
+Shared by `create_visualization` and `update_visualization`. Datawrapper reads colors from different settings per chart type; the tools write them to the right place:
+
+| Option | Effect |
+|---|---|
+| `base_color` | Main color. On symbol maps it colors the points (`symbol-color`); on choropleth maps it creates a light-to-dark gradient of this color (`colorscale`), unless `color_scale` is given. Tables ignore it |
+| `secondary_color` | Range plots: color of the range end (`base-color2`). Ignored with a warning for other types |
+| `color_scale` | Choropleth maps: 2+ hex colors from lowest to highest value, e.g. `["#fff7ec", "#fc8d59", "#7f0000"]` |
+| `visualize_overrides` → `custom-colors` | Color single categories or series, e.g. `{ "Mitte": "#FF6B00" }` (bar, column, line, area, pie, donut, election donut, dot, arrow, scatter) |
+| `language` | Chart locale, e.g. `"de-DE"` for German number formatting (`397.000,5`) and German footer texts. Datawrapper defaults to `"en-US"` |
+| `notes` | Notes shown below the chart |
+| `number_prepend`, `number_append`, `number_divisor` | Text before/after numbers and a power-of-ten divisor (`3` = thousands). Datawrapper only applies these per column, so they are set for `number_columns` (default: all numeric columns) |
+| `folder_id` | Put the chart into a Datawrapper folder (and into that folder's team, if it belongs to one). The ID is the number at the end of the folder URL in the archive, e.g. `455751` in `app.datawrapper.de/…/archive/455751`. Unknown or inaccessible folders return a clear error and nothing is changed |
+
+```javascript
+// German number format in thousands, with notes
+{
+  api_key: "your_datawrapper_api_token_here",
+  chart_id: "aBcDe",
+  language: "de-DE",
+  number_prepend: "ca. ",
+  number_append: " Tsd.",
+  number_divisor: 3,
+  notes: "Stand: 31.12.2025"
+}
+```
+
+### `delete_visualization`
+
+Delete a chart. The tool description tells the assistant to show the chart title and ID and get explicit confirmation from the user before calling it.
+
+**Parameters**:
+- `api_key` (required): Your Datawrapper API token
+- `chart_id` (required): The chart ID
+
+The tool looks the chart up first, so the response names the deleted chart, and an unknown ID returns a clear "chart not found" error without deleting anything. Datawrapper moves deleted charts to the trash and deletes them permanently after 30 days; until then they can be restored in Datawrapper. Deleting also takes down the public version of a published chart (its public URL returns 404).
+
+```javascript
+{
+  api_key: "your_datawrapper_api_token_here",
+  chart_id: "aBcDe"
+}
+```
 
 ## Testing
 
@@ -173,15 +329,20 @@ npm run build && node dist/tests/test-chart-types.js
 ```
 datawrapper-mcp/
 ├── src/
-│   ├── index.ts              # MCP server implementation
+│   ├── index.ts              # MCP server and tool handlers
 │   ├── http-server.ts        # HTTP server for remote access
 │   ├── datawrapper-client.ts # Datawrapper API wrapper
 │   ├── chart-builder.ts      # Smart defaults engine & validation
+│   ├── style-options.ts      # Maps colors/number formats to per-chart-type Datawrapper settings
 │   ├── basemap-matcher.ts    # LOR region detection for choropleth maps
 │   ├── chart-logger.ts       # Chart provenance logging
+│   ├── schemas.ts            # Zod input schemas for all tools
 │   └── types.ts              # TypeScript interfaces
 ├── src/tests/
 │   ├── basemap-matcher.test.ts # Unit tests for basemap matcher
+│   ├── datawrapper-client.test.ts # API client tests (mocked axios)
+│   ├── style-options.test.ts # Styling helper tests
+│   ├── visualization-tools.test.ts # list/get/update/delete tool tests (in-memory MCP client)
 │   └── test-choropleth-integration.ts # Choropleth integration tests
 ├── dist/                     # Compiled JavaScript
 └── README.md

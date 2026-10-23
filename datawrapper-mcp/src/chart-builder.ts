@@ -67,6 +67,29 @@ export class ChartBuilder {
   }
 
   /**
+   * Reverse lookup: get our chart_type and variant from a Datawrapper type string.
+   * Returns null for Datawrapper types this server does not create itself.
+   */
+  getChartTypeFromDatawrapperType(dwType: string): { chartType: ChartType; variant?: ChartVariant } | null {
+    if (dwType === 'd3-maps-symbols' || dwType === 'd3-maps-choropleth') {
+      return { chartType: 'map' };
+    }
+
+    for (const [chartType, variants] of Object.entries(DATAWRAPPER_TYPE_MAP)) {
+      for (const [variant, type] of Object.entries(variants)) {
+        if (type === dwType) {
+          return {
+            chartType: chartType as ChartType,
+            variant: variant === 'basic' ? undefined : variant as ChartVariant,
+          };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Analyze column types in data
    */
   analyzeColumns(data: Array<Record<string, any>>): ColumnAnalysis {

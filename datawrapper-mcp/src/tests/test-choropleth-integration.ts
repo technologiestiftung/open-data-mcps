@@ -102,8 +102,8 @@ async function testChoroplethMap() {
     // Step 6: Publish
     console.log('\n6. Publishing chart...');
     const published = await client.publishChart(chart.id);
-    const publicId = published.publicId || chart.id;
-    const publicUrl = client.getPublicUrl(publicId);
+    const publicId = published.chart.publicId || chart.id;
+    const publicUrl = published.url || client.getPublicUrl(publicId);
     const editUrl = client.getEditUrl(chart.id);
 
     console.log('\n' + '='.repeat(60));
