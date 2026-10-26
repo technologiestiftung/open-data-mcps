@@ -139,7 +139,11 @@ export class QueryProcessor {
       ...(this.SEED_MAPPINGS[token] || []),
     ]);
 
-    const deduplicated = [...new Set(expanded)];
+    const deduplicated = [...new Set(expanded)].map(term =>
+      // The portal's WAF mistakes `word OR 2024` for an injection attempt.
+      // Quoted numeric terms remain valid Solr terms without triggering it.
+      /^\d+(?:[.,]\d+)?$/.test(term) ? `"${term}"` : term
+    );
 
     if (deduplicated.length === 1) return deduplicated[0];
 

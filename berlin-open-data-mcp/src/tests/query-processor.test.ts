@@ -152,6 +152,12 @@ describe('QueryProcessor.buildQuery', () => {
       expect(result).toBe('kita');
     });
 
+    it('quotes numeric terms in OR queries to avoid portal WAF false positives', () => {
+      const result = qp.buildQuery('Einwohner 2024');
+      expect(result).toContain(' OR "2024"');
+      expect(result).not.toContain(' OR 2024');
+    });
+
     it('handles empty string by returning it', () => {
       expect(qp.buildQuery('')).toBe('');
     });

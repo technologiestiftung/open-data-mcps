@@ -70,7 +70,7 @@ export class BerlinOpenDataMCPServer {
       'search_berlin_datasets',
       {
         description:
-          'Search Berlin open datasets using natural language queries in German or English. Automatically expands synonyms (e.g. "bicycle" → fahrrad, radverkehr) and sends a single OR-joined edismax query with field weighting (title^5 tags^3 notes^2). Results are sorted by relevance then recency.',
+          'Search Berlin open datasets using natural language queries in German or English. Automatically expands synonyms (e.g. "bicycle" → fahrrad, radverkehr) and sends a single OR-joined edismax query across titles, descriptions, tags, authors, and maintainers. Results are sorted by relevance then recency.',
         inputSchema: SearchDatasetsSchema,
       },
       async (args) => this.handleSearchBerlinDatasets(args)

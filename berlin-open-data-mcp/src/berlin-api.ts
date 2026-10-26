@@ -23,10 +23,14 @@ const BERLIN_CKAN_API_BASE = 'https://datenregister.berlin.de/api/3/action';
 // before passing them to Solr, which forces AND semantics and overrides mm.
 // Tested: q="fahrrad zebra" with mm=1 returns 0 instead of the expected union.
 // Single-term queries with edismax + qf work correctly and produce better ranking.
-const DEFAULT_QF = 'title^5 notes^2 tags^3 author^1 maintainer^1';
+// Boost syntax such as `title^5` is rejected by the portal's WAF with an HTML
+// 403 response. Keep the field restriction, but let CKAN/Solr use equal weights.
+const DEFAULT_QF = 'title notes tags author maintainer';
 const DEFAULT_TIE = '0.1';
 
 export class BerlinOpenDataAPI {
+  constructor(private readonly fetchImpl: typeof fetch = fetch) {}
+
   /**
    * Rewrites plain multi-word queries to explicit OR groups so any term can
    * match (recall). CKAN uses q.op=AND at the top level, meaning space-separated
@@ -67,8 +71,24 @@ export class BerlinOpenDataAPI {
     });
 
     try {
-      const response = await fetch(url.toString());
-      const data = await response.json() as any;
+      const response = await this.fetchImpl(url.toString());
+      const responseText = await response.text();
+      let data;
+
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        const contentType = response.headers.get('content-type') || 'unknown content type';
+        const preview = responseText
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 160);
+        throw new Error(
+          `Berlin API returned a non-JSON response (${response.status} ${response.statusText}; ${contentType})`
+          + (preview ? `: ${preview}` : '')
+        );
+      }
 
       if (!response.ok || !data.success) {
         throw new Error(`API request failed: ${data.error?.message || response.statusText}`);
@@ -82,11 +102,8 @@ export class BerlinOpenDataAPI {
   }
 
   /**
-   * Core search method. Uses edismax with field weighting and always returns
-   * facets for tags/organizations/formats.
-   *
-   * edismax + qf dramatically improves ranking: a dataset titled "Radverkehr"
-   * scores 5× higher than one that mentions it once in a 2000-word description.
+   * Core search method. Uses edismax across relevant metadata fields and always
+   * returns facets for tags/organizations/formats.
    *
    * Multi-word queries are automatically rewritten to explicit OR groups via
    * rewriteQuery() to recover recall. Without this, CKAN's q.op=AND forces all
