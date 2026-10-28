@@ -8,6 +8,7 @@ import { BrowserFetcher } from './browser-fetcher.js';
 import { DOMParser } from '@xmldom/xmldom';
 import * as toGeoJSON from '@tmcw/togeojson';
 import { WFSClient, isClientSafeWFSError } from './wfs-client.js';
+import { USER_AGENT } from './user-agent.js';
 
 export interface FetchedData {
   format: string;
@@ -61,7 +62,7 @@ export class DataFetcher {
       const response = await fetch(url, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'Berlin-Open-Data-MCP-Server/1.0',
+          'User-Agent': USER_AGENT,
         },
       });
 

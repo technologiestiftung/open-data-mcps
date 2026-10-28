@@ -54,7 +54,60 @@ describe('BerlinOpenDataAPI', () => {
     const api = new BerlinOpenDataAPI(fetchMock as unknown as typeof fetch);
 
     await expect(api.searchDatasets({ query: 'verkehr' })).rejects.toThrow(
-      /non-JSON response \(403 Forbidden; text\/html\).*403 Forbidden.*Blocked by shield/
+      /firewall blocked this request \(HTTP 403\).*simplify the query/
     );
   });
+
+  it('identifies itself with the MCP user agent', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ id: 'x' }));
+
+    const api = new BerlinOpenDataAPI(fetchMock as unknown as typeof fetch);
+    await api.getDataset('x');
+
+    const init = (fetchMock.mock.calls as unknown as [string, { headers: Record<string, string> }][])[0][1];
+    expect(init.headers['User-Agent']).toMatch(/^Berlin-Open-Data-MCP-Server\/1\.0 \(\+https:\/\//);
+  });
+
+  it('builds WAF-safe filter queries', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ count: 0, results: [], search_facets: {} }));
+
+    const api = new BerlinOpenDataAPI(fetchMock as unknown as typeof fetch);
+    await api.searchDatasetsFiltered({ query: '*', tag: 'Bildung', format: 'csv', modified_since: '2024-06-01' });
+    await api.searchDatasetsFiltered({ query: '*', tag: 'Öffentlicher Raum', organization: 'datenrubrik' });
+
+    const fqs = (fetchMock.mock.calls as unknown as [string][]).map(([url]) => new URL(url).searchParams.get('fq'));
+    expect(fqs[0]).toBe('tags:Bildung AND res_format:CSV AND metadata_modified:[2024-06-01T00:00:00Z TO NOW]');
+    expect(fqs[1]).toBe('tags:Öffentlicher?Raum AND organization:datenrubrik');
+  });
+
+  it('retries once after a rate limit response', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response('<html>429 Please respect our berlin.de/robots.txt</html>', {
+        status: 429,
+        headers: { 'content-type': 'text/html', 'retry-after': '0' },
+      }))
+      .mockResolvedValueOnce(jsonResponse({ id: 'x' }));
+
+    const api = new BerlinOpenDataAPI(fetchMock as unknown as typeof fetch);
+    await expect(api.getDataset('x')).resolves.toEqual({ id: 'x' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports a rate limit when the retry is limited too', async () => {
+    const fetchMock = vi.fn(async () => new Response('<html>429</html>', {
+      status: 429,
+      headers: { 'content-type': 'text/html', 'retry-after': '0' },
+    }));
+
+    const api = new BerlinOpenDataAPI(fetchMock as unknown as typeof fetch);
+    await expect(api.getDataset('x')).rejects.toThrow(/rate limiting requests \(HTTP 429\)/);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });
+
+function jsonResponse(result: unknown) {
+  return new Response(JSON.stringify({ success: true, result }), {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  });
+}

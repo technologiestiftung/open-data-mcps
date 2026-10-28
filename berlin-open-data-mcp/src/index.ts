@@ -405,7 +405,9 @@ export class BerlinOpenDataMCPServer {
     try {
       const { query, limit } = params;
 
-      const facets = await this.api.getFacets(query, ['tags', 'organization', 'res_format', 'groups'], limit);
+      // Same query preparation as the search tools (synonyms, WAF-safe terms)
+      const processedQuery = query !== '*' ? this.queryProcessor.buildQuery(query) : query;
+      const facets = await this.api.getFacets(processedQuery, ['tags', 'organization', 'res_format', 'groups'], limit);
 
       let responseText = `# Facets for "${query}"\n\n`;
       responseText += `Use these values with \`search_datasets_filtered\` to narrow your search.\n\n`;

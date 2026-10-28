@@ -98,7 +98,7 @@ export class QueryProcessor {
   private readonly STOP_WORDS = new Set([
     // English
     'find', 'search', 'show', 'me', 'list', 'all', 'datasets', 'dataset',
-    'about', 'in', 'for', 'the', 'and', 'of', 'to', 'is', 'are', 'with',
+    'about', 'in', 'for', 'the', 'and', 'or', 'of', 'to', 'is', 'are', 'with',
     // German
     'was', 'ist', 'sind', 'hat', 'haben', 'kann', 'können', 'wird', 'werden',
     'der', 'die', 'das', 'den', 'dem', 'des', 'ein', 'eine', 'einer', 'eines',
@@ -106,7 +106,12 @@ export class QueryProcessor {
     'nach', 'vor', 'über', 'unter', 'zwischen', 'durch', 'gegen', 'ohne', 'um',
     'wie', 'wo', 'wer', 'was', 'welche', 'welcher', 'welches',
     'berlin', 'anzahl', 'gibt', 'viele', 'wie', 'es', 'sind', 'wieviele', 'zahl',
-    'pro', 'je', 'per',
+    'pro', 'je', 'per', 'und', 'oder', 'für',
+  ]);
+
+  // SQL statement keywords: in an OR query the portal's WAF blocks them as SQL injection
+  private readonly WAF_BLOCKED_TERMS = new Set([
+    'select', 'union', 'insert', 'delete', 'drop', 'update', 'create', 'alter', 'truncate',
   ]);
 
   /**
@@ -121,16 +126,21 @@ export class QueryProcessor {
   buildQuery(userQuery: string): string {
     const trimmed = userQuery.trim();
 
-    // Pass through structured Solr queries unchanged (field qualifiers, operators, wildcards)
-    const isStructured = /[+\-":()\[\]{}\\]|\b(?:AND|OR|NOT)\b/i.test(trimmed)
+    // Pass through structured Solr queries unchanged. Parentheses and hyphens alone don't count:
+    // "Wahlergebnisse 2021 (Abgeordnetenhaus)" or "E-Scooter" are natural language, and passing
+    // them through would make Solr require every word.
+    const isStructured = /(?:^|[\s(])[\p{L}_][\p{L}\p{N}_]*:\S/u.test(trimmed)  // field qualifier: title:Radverkehr
+      || /\b(?:AND|OR|NOT)\b/.test(trimmed)                                      // Solr operators are uppercase
+      || /(?:^|\s)[+-]\S/.test(trimmed)                                           // required/excluded terms: +a -b
+      || /["\[\]{}\\]/.test(trimmed)                                               // phrases, ranges, escapes
       || trimmed === '*' || trimmed === '*:*';
     if (isStructured) return trimmed;
 
     const tokens = trimmed
       .toLowerCase()
-      .split(/\s+/)
-      .map(t => t.replace(/[?!.,;'"()[\]{}]+/g, ''))  // strip punctuation (not : to preserve potential field queries)
-      .filter(t => t.length >= 2 && !this.STOP_WORDS.has(t));
+      .split(/[\s/]+/)  // split "und/oder" into words, the WAF blocks the slash form in OR queries
+      .map(t => t.replace(/[?!.,;'"()[\]{}]+/g, '').replace(/:+$/, ''))  // strip punctuation, e.g. "E-Scooter:" 
+      .filter(t => t.length >= 2 && !this.STOP_WORDS.has(t) && !this.WAF_BLOCKED_TERMS.has(t));
 
     if (tokens.length === 0) return userQuery;
 
@@ -139,11 +149,14 @@ export class QueryProcessor {
       ...(this.SEED_MAPPINGS[token] || []),
     ]);
 
-    const deduplicated = [...new Set(expanded)].map(term =>
-      // The portal's WAF mistakes `word OR 2024` for an injection attempt.
-      // Quoted numeric terms remain valid Solr terms without triggering it.
-      /^\d+(?:[.,]\d+)?$/.test(term) ? `"${term}"` : term
-    );
+    // The portal's WAF mistakes `word OR 2024` for an injection attempt.
+    // Quoted numeric terms remain valid Solr terms without triggering it,
+    // but two or more numbers in one query are blocked even when quoted, so keep only the first.
+    const isNumeric = (term: string) => /^\d+(?:[.,]\d+)?$/.test(term);
+    const firstNumber = expanded.find(isNumeric);
+    const deduplicated = [...new Set(expanded)]
+      .filter(term => !isNumeric(term) || term === firstNumber)
+      .map(term => (isNumeric(term) ? `"${term}"` : term));
 
     if (deduplicated.length === 1) return deduplicated[0];
 

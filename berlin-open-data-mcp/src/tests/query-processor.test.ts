@@ -71,6 +71,25 @@ describe('QueryProcessor.buildQuery', () => {
       const q = '"Berliner Mietspiegel"';
       expect(qp.buildQuery(q)).toBe(q);
     });
+
+    it('passes through required and excluded terms unchanged', () => {
+      expect(qp.buildQuery('+radverkehr -auto')).toBe('+radverkehr -auto');
+    });
+  });
+
+  describe('natural language with parentheses and hyphens', () => {
+    it('expands queries with parentheses instead of passing them through', () => {
+      expect(qp.buildQuery('Wahlergebnisse 2021 (Abgeordnetenhaus)'))
+        .toBe('(wahlergebnisse OR "2021" OR abgeordnetenhaus)');
+    });
+
+    it('keeps hyphenated words and strips a trailing colon', () => {
+      expect(qp.buildQuery('E-Scooter: Unfälle')).toBe('(e-scooter OR unfälle)');
+    });
+
+    it('treats lowercase and/or/not as words, not operators', () => {
+      expect(qp.buildQuery('Lärm or Verkehr')).not.toBe('Lärm or Verkehr');
+    });
   });
 
   describe('SEED_MAPPINGS synonym expansion', () => {
@@ -156,6 +175,22 @@ describe('QueryProcessor.buildQuery', () => {
       const result = qp.buildQuery('Einwohner 2024');
       expect(result).toContain(' OR "2024"');
       expect(result).not.toContain(' OR 2024');
+    });
+
+    it('keeps only the first numeric term, the portal WAF blocks queries with two numbers', () => {
+      const result = qp.buildQuery('Einwohner 2023 vs. 2024');
+      expect(result).toContain('"2023"');
+      expect(result).not.toContain('2024');
+    });
+
+    it('splits slash-joined words and drops und/oder', () => {
+      const result = qp.buildQuery('Ausgaben für Schulen und/oder Kitas');
+      expect(result).toBe('(ausgaben OR schulen OR kitas)');
+    });
+
+    it('drops SQL statement keywords that the portal WAF blocks', () => {
+      const result = qp.buildQuery('select Schulen');
+      expect(result).toBe('schulen');
     });
 
     it('handles empty string by returning it', () => {

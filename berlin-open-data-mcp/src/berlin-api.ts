@@ -11,6 +11,7 @@ import {
   FilteredSearchParams,
   FacetCounts,
 } from './types.js';
+import { USER_AGENT } from './user-agent.js';
 
 const BERLIN_CKAN_API_BASE = 'https://datenregister.berlin.de/api/3/action';
 
@@ -27,6 +28,20 @@ const BERLIN_CKAN_API_BASE = 'https://datenregister.berlin.de/api/3/action';
 // 403 response. Keep the field restriction, but let CKAN/Solr use equal weights.
 const DEFAULT_QF = 'title notes tags author maintainer';
 const DEFAULT_TIE = '0.1';
+
+// The portal rate limits with HTTP 429
+const RATE_LIMIT_RETRY_DEFAULT_MS = 2000;
+const RATE_LIMIT_RETRY_MAX_MS = 10000;
+
+/**
+ * Formats a value for an fq clause without parentheses or quotes: the WAF scores them, and e.g.
+ * `tags:"Öffentlicher Raum" AND metadata_modified:[… TO NOW]` gets blocked. Spaces and other
+ * special characters become the single-character wildcard `?`, which keeps the value one term
+ * (`tags:Öffentlicher?Raum`) and matches the same datasets as the quoted form.
+ */
+function fqValue(value: string): string {
+  return value.replace(/[^\p{L}\p{N}_.-]/gu, '?');
+}
 
 export class BerlinOpenDataAPI {
   constructor(private readonly fetchImpl: typeof fetch = fetch) {}
@@ -71,13 +86,34 @@ export class BerlinOpenDataAPI {
     });
 
     try {
-      const response = await this.fetchImpl(url.toString());
+      let response = await this.get(url);
+      if (response.status === 429) {
+        // Rate limited: wait once, then retry
+        const retryAfterSeconds = Number(response.headers.get('retry-after'));
+        const delayMs = Number.isFinite(retryAfterSeconds) && response.headers.get('retry-after') !== null
+          ? Math.min(retryAfterSeconds * 1000, RATE_LIMIT_RETRY_MAX_MS)
+          : RATE_LIMIT_RETRY_DEFAULT_MS;
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        response = await this.get(url);
+      }
       const responseText = await response.text();
       let data;
 
       try {
         data = JSON.parse(responseText);
       } catch {
+        if (response.status === 429) {
+          throw new Error(
+            'The Berlin open data portal is rate limiting requests (HTTP 429). Wait a moment before trying again.'
+          );
+        }
+        if (response.status === 403) {
+          throw new Error(
+            "The Berlin open data portal's firewall blocked this request (HTTP 403). This is usually caused by the "
+            + 'search text or filters: simplify the query (fewer words, at most one number, no special characters) '
+            + 'or use fewer filters at once.'
+          );
+        }
         const contentType = response.headers.get('content-type') || 'unknown content type';
         const preview = responseText
           .replace(/<[^>]*>/g, ' ')
@@ -96,9 +132,16 @@ export class BerlinOpenDataAPI {
 
       return data.result;
     } catch (error) {
-      console.error(`Berlin API request failed:`, error);
+      // The URL contains the tool arguments, needed to see what triggered the portal's WAF
+      console.error(`Berlin API request failed: ${url.toString()}`, error);
       throw error;
     }
+  }
+
+  private get(url: URL) {
+    return this.fetchImpl(url.toString(), {
+      headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+    });
   }
 
   /**
@@ -132,19 +175,21 @@ export class BerlinOpenDataAPI {
     const fqFilters: string[] = [];
 
     if (params.tags && params.tags.length > 0) {
-      fqFilters.push(`tags:(${params.tags.join(' OR ')})`);
+      const tags = params.tags.map(fqValue);
+      fqFilters.push(tags.length === 1 ? `tags:${tags[0]}` : `tags:(${tags.join(' OR ')})`);
     }
     if (params.organization) {
-      fqFilters.push(`organization:${params.organization}`);
+      fqFilters.push(`organization:${fqValue(params.organization)}`);
     }
     if (params.format) {
-      fqFilters.push(`res_format:${params.format.toUpperCase()}`);
+      fqFilters.push(`res_format:${fqValue(params.format.toUpperCase())}`);
     }
     if (params.modifiedSince) {
       const ts = params.modifiedSince.includes('T')
         ? params.modifiedSince
         : `${params.modifiedSince}T00:00:00Z`;
-      fqFilters.push(`metadata_modified:[${ts} TO *]`);
+      // NOW instead of * : the WAF scores the asterisk, and nothing is modified in the future
+      fqFilters.push(`metadata_modified:[${ts} TO NOW]`);
     }
 
     if (fqFilters.length > 0) {

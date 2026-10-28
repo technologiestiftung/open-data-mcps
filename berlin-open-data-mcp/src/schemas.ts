@@ -1,11 +1,27 @@
 import { z } from 'zod';
 
-const datasetIdSchema = z.string().min(1, 'dataset_id is required');
+// Solr sort expression like "metadata_modified desc" or "score desc, metadata_modified desc"
+const sortSchema = z
+  .string()
+  .regex(
+    /^[a-z_]+ (asc|desc)(, ?[a-z_]+ (asc|desc))*$/,
+    'sort must look like "metadata_modified desc" or "score desc, metadata_modified desc"'
+  );
+
+// Dataset IDs are CKAN names (or UUIDs). Anything else would only reach the portal's WAF
+// or return "not found", so reject it with a hint instead.
+const datasetIdSchema = z
+  .string()
+  .trim()
+  .regex(
+    /^[a-z0-9_-]{2,100}$/,
+    'dataset_id must be a dataset ID from search results (lowercase letters, digits, "-" and "_"), not a title or URL'
+  );
 
 export const SearchDatasetsSchema = z.object({
   query: z.string().min(1).max(500),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  sort: z.string().optional(),
+  sort: sortSchema.optional(),
 });
 
 export const SearchFilteredSchema = z.object({
@@ -13,8 +29,14 @@ export const SearchFilteredSchema = z.object({
   organization: z.string().optional(),
   tag: z.string().optional(),
   format: z.string().optional(),
-  modified_since: z.string().optional(),
-  sort: z.string().default('score desc, metadata_modified desc').optional(),
+  modified_since: z
+    .string()
+    .regex(
+      /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?Z)?$/,
+      'modified_since must be a date like "2024-01-01" or "2024-01-01T00:00:00Z"'
+    )
+    .optional(),
+  sort: sortSchema.default('score desc, metadata_modified desc').optional(),
   rows: z.coerce.number().int().min(1).max(100).default(20),
 });
 

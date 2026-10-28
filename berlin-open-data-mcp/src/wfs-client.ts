@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { DOMParser } from '@xmldom/xmldom';
 import type { FeatureCollection } from 'geojson';
+import { USER_AGENT } from './user-agent.js';
 
 export interface WFSCapabilities {
   featureTypes: Array<{
@@ -96,7 +97,7 @@ export class WFSClient {
       timeout: this.REQUEST_TIMEOUT,
       maxRedirects: 0,
       headers: {
-        'User-Agent': 'Berlin-Open-Data-MCP-Server/1.0',
+        'User-Agent': USER_AGENT,
       },
     });
   }
