@@ -190,7 +190,9 @@ export class BerlinOpenDataAPI {
     facetFields: string[] = ['tags', 'organization', 'res_format', 'groups'],
     limit: number = 10,
   ): Promise<FacetCounts> {
-    const facetFieldJson = JSON.stringify(facetFields);
+    // Not JSON.stringify: the portal's WAF answers `","` in the query string with an HTML 403,
+    // so the list needs a space after each comma (like the facet.field in searchDatasets)
+    const facetFieldJson = `[${facetFields.map((field) => JSON.stringify(field)).join(', ')}]`;
     const searchParams: Record<string, any> = {
       q: this.rewriteQuery(query || '*:*'),
       rows: 0,
