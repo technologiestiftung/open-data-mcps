@@ -172,7 +172,7 @@ Connect from [Claude.ai](https://claude.ai/) using Custom Connectors:
 
 ### 🐻 BärGPT
 
-The Open Data MCP is integrated into BärGPT and can be added by select it from the list of available connectors.
+The Open Data MCP and the Datawrapper MCP are fully integrated into BärGPT and can be added by select it from the list of available connectors.
 
 ### VS Code
 
