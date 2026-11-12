@@ -12,7 +12,7 @@ import { ChartLogger } from '../chart-logger.js';
 import { DatawrapperChart } from '../types.js';
 
 const API_KEY = 'test-token';
-// Tiny stand-in for an exported PNG (preview images are attached to create/update/publish responses)
+// Tiny stand-in for an exported PNG (preview images are attached to create/update responses)
 const PNG_BYTES = Buffer.from('89504e470d0a1a0a', 'hex');
 
 async function setup(): Promise<Client> {
@@ -82,7 +82,6 @@ describe('tool registration', () => {
       'export_visualization_png',
       'get_visualization',
       'list_visualizations',
-      'publish_visualization',
       'update_visualization',
     ]);
     expect(byName.list_visualizations.annotations?.readOnlyHint).toBe(true);
@@ -90,7 +89,6 @@ describe('tool registration', () => {
     expect(byName.delete_visualization.annotations?.destructiveHint).toBe(true);
     expect(byName.update_visualization.annotations?.readOnlyHint).toBe(false);
     expect(byName.create_visualization.annotations?.destructiveHint).toBe(false);
-    expect(byName.publish_visualization.annotations?.openWorldHint).toBe(true);
     expect(byName.export_visualization_png.annotations?.readOnlyHint).toBe(true);
     expect(byName.delete_visualization.description).toMatch(/explicit confirmation/);
   });
@@ -333,7 +331,6 @@ describe('update_visualization', () => {
   it('warns that a published chart needs republishing and does not publish', async () => {
     vi.spyOn(DatawrapperClient.prototype, 'getChartInfo').mockResolvedValue(publishedChart());
     vi.spyOn(DatawrapperClient.prototype, 'updateChart').mockResolvedValue(publishedChart());
-    const publishSpy = vi.spyOn(DatawrapperClient.prototype, 'publishChart');
 
     const result: any = await client.callTool({
       name: 'update_visualization',
@@ -341,11 +338,9 @@ describe('update_visualization', () => {
     });
     const text = textOf(result);
 
-    expect(publishSpy).not.toHaveBeenCalled();
     expect(text).toContain('This chart is already published');
     expect(text).toContain('https://datawrapper.dwcdn.net/abc12/2/');
     expect(text).toContain('Do NOT republish automatically');
-    expect(text).toContain('publish_visualization');
   });
 
   it('changes chart type and variant via the Datawrapper type map', async () => {
@@ -685,26 +680,6 @@ describe('delete_visualization', () => {
   });
 });
 
-describe('publish_visualization', () => {
-  it('uses publicId, url and version from the { data, version, url } publish response', async () => {
-    const postSpy = vi.spyOn(DatawrapperClient.prototype, 'publishChart').mockResolvedValue({
-      chart: chart({ publicId: 'f00ba12hash' }),
-      version: 3,
-      url: 'https://datawrapper.dwcdn.net/f00ba12hash/3/',
-    });
-
-    const result: any = await client.callTool({ name: 'publish_visualization', arguments: { api_key: API_KEY, chart_id: 'abc12' } });
-    const text = textOf(result);
-
-    expect(postSpy).toHaveBeenCalledWith('abc12');
-    expect(result.isError).toBeFalsy();
-    expect(text).toContain('Chart published (version 3)');
-    expect(text).toContain('👁️ **View**: https://datawrapper.dwcdn.net/f00ba12hash/3/');
-    expect(text).toContain('[CHART:f00ba12hash]');
-    expect(text).toContain('id="datawrapper-chart-f00ba12hash"');
-  });
-});
-
 describe('create_visualization styling', () => {
   it('transposes grouped column charts and passes language, folder, notes and number formats', async () => {
     const createSpy = vi.spyOn(DatawrapperClient.prototype, 'createChart').mockResolvedValue(chart({ id: 'new01', type: 'grouped-column-chart' }));
@@ -807,15 +782,12 @@ describe('PNG previews', () => {
   it('attaches previews to create and publish responses', async () => {
     vi.spyOn(DatawrapperClient.prototype, 'createChart').mockResolvedValue(chart({ id: 'new01' }));
     vi.spyOn(DatawrapperClient.prototype, 'uploadData').mockResolvedValue();
-    vi.spyOn(DatawrapperClient.prototype, 'publishChart').mockResolvedValue({ chart: chart({ id: 'new01', publicId: 'new01' }), version: 1 });
     const exportSpy = vi.spyOn(DatawrapperClient.prototype, 'exportPng').mockResolvedValue(PNG_BYTES);
 
     const created: any = await client.callTool({ name: 'create_visualization', arguments: { api_key: API_KEY, chart_type: 'bar', data: [{ a: 'x', b: 1 }] } });
-    const published: any = await client.callTool({ name: 'publish_visualization', arguments: { api_key: API_KEY, chart_id: 'new01' } });
 
     expect(exportSpy).toHaveBeenCalledTimes(2);
     expect(created.content[1].type).toBe('image');
-    expect(published.content[1].type).toBe('image');
   });
 
   it('skips the preview when preview is false', async () => {

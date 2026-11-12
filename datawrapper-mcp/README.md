@@ -19,10 +19,10 @@ MCP server for creating and managing data visualizations using the Datawrapper A
   - **Maps**: GeoJSON point maps (symbol maps, colored and sized by any property) and Berlin choropleth maps
 - **Managing existing charts**:
   - **List** all charts of your account with search, folder/team filters and pagination
-  - **Inspect** a chart's metadata, publish status, public URL, embed code and data
+  - **Inspect** a chart's metadata, embed code and data
   - **Update** charts in place (colors, title, description, source, type, data) without getting a new chart ID
   - **Delete** charts (moved to the Datawrapper trash for 30 days)
-- 🖼️ **Previews**: `create_visualization`, `update_visualization` and `publish_visualization` attach a PNG preview of the chart, so the assistant can check that a change (e.g. a color) actually shows. `export_visualization_png` exports high-resolution PNGs on request
+- 🖼️ **Previews**: `create_visualization`, and  `update_visualization` attach a PNG preview of the chart, so the assistant can check that a change (e.g. a color) actually shows. `export_visualization_png` exports high-resolution PNGs on request
 - **Smart Defaults**: Automatic titles, labels, and axes from data structure
 - **Provenance Tracking**: JSON log of created charts with source dataset links
 
@@ -162,18 +162,6 @@ Grouped and stacked column charts are created with transposed data, so the first
 }
 ```
 
-### `publish_visualization`
-
-Publish a previously created chart.
-
-**Parameters**:
-- `api_key` (required): Your Datawrapper API token
-- `chart_id` (required): The chart ID returned from `create_visualization` (or found via `list_visualizations`). Chart IDs have exactly 5 letters or digits (e.g. `aBcDe`); all tools reject other values
-
-- `preview` (optional): Attach a PNG preview to the response (default `true`)
-
-Also use it to republish a chart after `update_visualization`: edits only change the draft, and the public version and embeds keep showing the old state until the chart is published again. The chart ID stays the same, and Datawrapper increments the public version number.
-
 ### `list_visualizations`
 
 List the charts in your Datawrapper account (read-only).
@@ -249,7 +237,7 @@ The last two points are inferred from the archived Datawrapper API source, not f
 
 If the call also replaces `data` and the data upload fails after the other changes were saved, the error lists the saved changes and says that the data was not replaced, so only the data upload needs to be retried.
 
-The tool never publishes. If the chart was already published, the response says that the public version is unchanged until `publish_visualization` is called again.
+The tool never publishes. If the chart was already published, the response says that the public version is unchanged.
 
 ```javascript
 // Change the color of an existing chart
@@ -323,7 +311,7 @@ Shared by `create_visualization` and `update_visualization`. Datawrapper reads c
 
 ### Previews
 
-`create_visualization`, `update_visualization` and `publish_visualization` render the chart via Datawrapper's PNG export and attach it as an image to the response. The preview shows the current state, including unpublished changes. It is best-effort: if the export fails, takes longer than 15 seconds or is larger than 1 MB, the response says so and the chart operation itself still succeeds. Previews are typically 10-50 KB and add about 2 seconds per call. Pass `preview: false` to skip them.
+`create_visualization` and `update_visualization` render the chart via Datawrapper's PNG export and attach it as an image to the response. The preview shows the current state, including unpublished changes. It is best-effort: if the export fails, takes longer than 15 seconds or is larger than 1 MB, the response says so and the chart operation itself still succeeds. Previews are typically 10-50 KB and add about 2 seconds per call. Pass `preview: false` to skip them.
 
 ### `export_visualization_png`
 

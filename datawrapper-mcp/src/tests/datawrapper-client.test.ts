@@ -96,23 +96,12 @@ describe('DatawrapperClient', () => {
     expect(http.post).toHaveBeenCalledWith('/charts', { type: 'd3-bars', title: 'My chart', metadata: { visualize: {} } });
   });
 
-  it('publishChart unwraps the { data, version, url } response', async () => {
-    http.post.mockResolvedValue({
-      data: { data: { id: 'abc12', publicId: 'f00ba12hash', type: 'd3-bars', title: 'T', metadata: {} }, version: 3, url: 'https://datawrapper.dwcdn.net/f00ba12hash/3/' },
-    });
-    const result = await new DatawrapperClient('tok').publishChart('abc12');
-    expect(http.post).toHaveBeenCalledWith('/charts/abc12/publish');
-    expect(result.chart.publicId).toBe('f00ba12hash');
-    expect(result.version).toBe(3);
-    expect(result.url).toBe('https://datawrapper.dwcdn.net/f00ba12hash/3/');
-  });
 
   it.each(['../folders/12', 'abcde?permanent=true', 'abc', 'abc12/data', 'ab%2Fcd'])('rejects the unsafe chart ID %s without any request', async (badId) => {
     const client = new DatawrapperClient('tok');
     await expect(client.deleteChart(badId)).rejects.toThrow(/Invalid chart ID/);
     await expect(client.getChartInfo(badId)).rejects.toThrow(/Invalid chart ID/);
     await expect(client.updateChart(badId, { title: 'x' })).rejects.toThrow(/Invalid chart ID/);
-    await expect(client.publishChart(badId)).rejects.toThrow(/Invalid chart ID/);
     await expect(client.uploadData(badId, 'a,b')).rejects.toThrow(/Invalid chart ID/);
     expect(http.delete).not.toHaveBeenCalled();
     expect(http.get).not.toHaveBeenCalled();
@@ -138,11 +127,6 @@ describe('DatawrapperClient', () => {
       const promise = new DatawrapperClient('tok').deleteChart('abc12');
       await expect(promise).rejects.toThrow(/Permission denied: could not delete chart/);
       await expect(promise).rejects.toThrow(/chart:write/);
-    });
-
-    it('names all publish scopes on a 403 from publish', async () => {
-      http.post.mockRejectedValue(httpError(403));
-      await expect(new DatawrapperClient('tok').publishChart('abc12')).rejects.toThrow(/theme:read and visualization:read/);
     });
 
     it('maps 404 to "chart not found" and keeps the status', async () => {

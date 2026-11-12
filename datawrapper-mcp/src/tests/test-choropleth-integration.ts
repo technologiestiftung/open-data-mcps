@@ -98,20 +98,13 @@ async function testChoroplethMap() {
     console.log(`   CSV preview:\n${csvData.split('\n').slice(0, 3).join('\n')}`);
     await client.uploadData(chart.id, csvData);
     console.log('   Data uploaded');
-
-    // Step 6: Publish
-    console.log('\n6. Publishing chart...');
-    const published = await client.publishChart(chart.id);
-    const publicId = published.chart.publicId || chart.id;
-    const publicUrl = published.url || client.getPublicUrl(publicId);
     const editUrl = client.getEditUrl(chart.id);
 
     console.log('\n' + '='.repeat(60));
     console.log('\n✅ SUCCESS!');
-    console.log(`   Public URL: ${publicUrl}`);
     console.log(`   Edit URL: ${editUrl}`);
 
-    return { success: true, url: publicUrl };
+    return { success: true, url: editUrl };
   } catch (error: any) {
     console.log('\n' + '='.repeat(60));
     console.log('\n❌ FAILED!');

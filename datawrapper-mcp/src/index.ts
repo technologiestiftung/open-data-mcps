@@ -1,16 +1,14 @@
 #!/usr/bin/env node
 // ABOUTME: MCP server for Datawrapper visualization integration
-// ABOUTME: Exposes tools to create, list, inspect, update, publish and delete charts via the Datawrapper API
+// ABOUTME: Exposes tools to create, list, inspect, update and delete charts via the Datawrapper API
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { DatawrapperApiError, DatawrapperClient } from './datawrapper-client.js';
 import { ChartBuilder } from './chart-builder.js';
 import { ChartLogger } from './chart-logger.js';
 import {
   CreateVisualizationParams,
-  PublishVisualizationParams,
   ListVisualizationsParams,
   GetVisualizationParams,
   UpdateVisualizationParams,
@@ -37,7 +35,6 @@ import {
 } from './style-options.js';
 import {
   CreateVisualizationSchema,
-  PublishVisualizationSchema,
   ListVisualizationsSchema,
   GetVisualizationSchema,
   UpdateVisualizationSchema,
@@ -326,7 +323,7 @@ export class DatawrapperMCPServer {
       'create_visualization',
       {
         title: 'Create Datawrapper chart',
-        description: 'Create a NEW data visualization using the Datawrapper API. To change an existing chart (colors, title, description, data, type), use `update_visualization` instead - it keeps the chart ID. The chart is NOT published automatically - use `publish_visualization` after the user approves it. Supports bar, column, line, area, scatter, dot, range, arrow, pie, donut, election-donut, table, and map charts. Use "variant" for bar (basic/stacked/split) and column (basic/grouped/stacked) charts. **For maps, map_type is REQUIRED**: "d3-maps-symbols" (points with GeoJSON) or "d3-maps-choropleth" (regions with tabular data). **For symbol maps**: pass a GeoJSON FeatureCollection of Point features; all feature properties are kept as data columns, so points can be colored by a property with color_column (text = categories with legend, colors via category_colors; numeric = gradient) and sized with size_column. **For choropleth maps**: provide tabular data with Berlin region identifiers (Bezirke, Prognoseräume, Bezirksregionen, or Planungsräume). If basemap is not specified, the tool will auto-detect and return available options. Optional styling: base_color (also colors map points / the choropleth gradient), secondary_color (range end), color_scale (choropleth), language (e.g. "de-DE" for German number formatting), notes, number_prepend/number_append/number_divisor, folder_id. Returns an edit URL where the user can preview and adjust the chart before publishing.',
+        description: 'Create a NEW data visualization using the Datawrapper API. To change an existing chart (colors, title, description, data, type), use `update_visualization` instead - it keeps the chart ID. The chart is NOT published automatically. Supports bar, column, line, area, scatter, dot, range, arrow, pie, donut, election-donut, table, and map charts. Use "variant" for bar (basic/stacked/split) and column (basic/grouped/stacked) charts. **For maps, map_type is REQUIRED**: "d3-maps-symbols" (points with GeoJSON) or "d3-maps-choropleth" (regions with tabular data). **For symbol maps**: pass a GeoJSON FeatureCollection of Point features; all feature properties are kept as data columns, so points can be colored by a property with color_column (text = categories with legend, colors via category_colors; numeric = gradient) and sized with size_column. **For choropleth maps**: provide tabular data with Berlin region identifiers (Bezirke, Prognoseräume, Bezirksregionen, or Planungsräume). If basemap is not specified, the tool will auto-detect and return available options. Optional styling: base_color (also colors map points / the choropleth gradient), secondary_color (range end), color_scale (choropleth), language (e.g. "de-DE" for German number formatting), notes, number_prepend/number_append/number_divisor, folder_id. Returns an edit URL where the user can preview and adjust the chart before publishing.',
         inputSchema: CreateVisualizationSchema,
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
       },
@@ -336,23 +333,10 @@ export class DatawrapperMCPServer {
     );
 
     this.server.registerTool(
-      'publish_visualization',
-      {
-        title: 'Publish Datawrapper chart',
-        description: 'Publish a previously created visualization to make it publicly viewable. Use this after the user has reviewed and approved the chart in the Datawrapper editor. Also use it to republish a chart after `update_visualization`, so that the changes become visible in the public version and embeds.',
-        inputSchema: PublishVisualizationSchema,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
-      },
-      async (args) => {
-        return await this.handlePublishVisualization(args as PublishVisualizationParams);
-      }
-    );
-
-    this.server.registerTool(
       'list_visualizations',
       {
         title: 'List Datawrapper charts',
-        description: 'List charts in the Datawrapper account of the API token (newest first by default). Returns ID, title, type, publish status, public URL and edit URL per chart, plus the total count. Supports search, folder/team filters, sorting and pagination via limit/offset. Use this to find chart IDs for `get_visualization`, `update_visualization`, `publish_visualization` or `delete_visualization`.',
+        description: 'List charts in the Datawrapper account of the API token (newest first by default). Returns ID, title, type, publish status, public URL and edit URL per chart, plus the total count. Supports search, folder/team filters, sorting and pagination via limit/offset. Use this to find chart IDs for `get_visualization`, `update_visualization` or `delete_visualization`.',
         inputSchema: ListVisualizationsSchema,
         annotations: { readOnlyHint: true, openWorldHint: true },
       },
@@ -378,7 +362,7 @@ export class DatawrapperMCPServer {
       'update_visualization',
       {
         title: 'Update Datawrapper chart',
-        description: 'Modify an existing Datawrapper chart in place - the chart keeps its ID, edit URL and embed codes. Use this for small changes such as colors (base_color, secondary_color for range ends, color_scale for choropleth maps, visualize_overrides e.g. custom-colors), title, description, byline, source, notes, symbol map color/size columns (color_column, category_colors, size_column), language/locale (e.g. "de-DE" for German number formatting), number prefix/suffix/divisor, value label format, folder, chart type/variant, transpose, or to replace the dataset (data). Provide at least one change; only the given fields change. Changes are NOT published automatically: if the chart was already published, its public version and embeds keep showing the old state until `publish_visualization` is called again - ask the user before republishing.',
+        description: 'Modify an existing Datawrapper chart in place - the chart keeps its ID, edit URL and embed codes. Use this for small changes such as colors (base_color, secondary_color for range ends, color_scale for choropleth maps, visualize_overrides e.g. custom-colors), title, description, byline, source, notes, symbol map color/size columns (color_column, category_colors, size_column), language/locale (e.g. "de-DE" for German number formatting), number prefix/suffix/divisor, value label format, folder, chart type/variant, transpose, or to replace the dataset (data). Provide at least one change; only the given fields change. Changes are NOT published automatically.',
         inputSchema: UpdateVisualizationSchema,
         annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
       },
@@ -783,59 +767,6 @@ ${JSON.stringify(sampleFeature, null, 2)}
     return await this.withPreview(responseText, datawrapperClient, chart.id, preview);
   }
 
-  private async handlePublishVisualization(params: PublishVisualizationParams): Promise<CallToolResult> {
-    try {
-      const { api_key, chart_id, preview } = params;
-      const datawrapperClient = this.getAuthenticatedClient(api_key);
-
-      if (!chart_id) {
-        throw new Error('chart_id is required');
-      }
-
-      console.error(`Publishing chart ${chart_id}...`);
-      const { chart: publishedChart, version, url } = await datawrapperClient.publishChart(chart_id);
-
-      const publicId = publishedChart?.publicId || chart_id;
-      const publicUrl = url || publishedChart?.publicUrl || datawrapperClient.getPublicUrl(publicId);
-      const editUrl = datawrapperClient.getEditUrl(chart_id);
-      const embedCode = datawrapperClient.getEmbedCode(publicId);
-
-      // Update log entry with published info
-      this.chartLogger.logChart({
-        chartId: chart_id,
-        url: publicUrl,
-        embedCode,
-        editUrl,
-        publishedAt: new Date().toISOString(),
-        published: true
-      }).catch((err: Error) => console.error('Background logging failed:', err));
-
-      const versionInfo = version !== undefined ? ` (version ${version})` : '';
-      const responseText = `✅ Chart published${versionInfo}!
-
-👁️ **View**: ${publicUrl}
-✏️ **Edit**: ${editUrl}
-
-[CHART:${publicId}]
-${embedCode}
-[/CHART]`;
-
-      return await this.withPreview(responseText, datawrapperClient, chart_id, preview);
-    } catch (error: any) {
-      console.error('Error publishing visualization:', error);
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `❌ Failed to publish: ${error.message}`
-          }
-        ],
-        isError: true
-      };
-    }
-  }
-
   private async handleListVisualizations(params: ListVisualizationsParams): Promise<CallToolResult> {
     try {
       const { api_key, search, folder_id, team_id, published, order_by, order } = params;
@@ -988,8 +919,7 @@ ${embedCode}
 \`\`\`html
 ${embedCode}
 \`\`\`
-
-Note: changes made since the last publish only become public after calling \`publish_visualization\` again.`;
+`;
       } else {
         responseText += `\n\n📝 **Status**: Not published`;
       }
@@ -1309,14 +1239,8 @@ ${changes.map(change => `- ${change}`).join('\n')}`;
         responseText += `
 
 ⚠️ **This chart is already published.** The public version (${publicUrl}) and all embeds still show the previous state until the chart is republished.
-
-**IMPORTANT: Do NOT republish automatically.** Present the edit link to the user and ask: "Would you like me to republish this chart so the changes go live?" If yes, call \`publish_visualization\` with chart ID ${chart_id}.`;
-      } else {
-        responseText += `
-
-**IMPORTANT: Do NOT publish automatically.** Present the edit link to the user and ask: "Would you like me to publish this chart, or do you want to make more changes first?"`;
+`;
       }
-
       return await this.withPreview(responseText, datawrapperClient, chart_id, preview);
     } catch (error: any) {
       console.error('Error updating visualization:', error);

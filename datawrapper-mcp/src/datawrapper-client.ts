@@ -1,13 +1,12 @@
 // ABOUTME: Datawrapper API client for chart creation and management
-// ABOUTME: Handles authentication, chart creation, listing, updates, data upload, publishing and deletion
+// ABOUTME: Handles authentication, chart creation, listing, updates, data upload and deletion
 
 import axios, { AxiosInstance } from 'axios';
-import { DatawrapperChart, DatawrapperChartList, DatawrapperChartMetadata, DatawrapperChartUpdate, DatawrapperPublishResult, ExportPngOptions, ListChartsOptions } from './types.js';
+import { DatawrapperChart, DatawrapperChartList, DatawrapperChartMetadata, DatawrapperChartUpdate, ExportPngOptions, ListChartsOptions } from './types.js';
 
 // Scopes required per endpoint, used to explain 403 errors
 const SCOPE_READ = 'chart:read';
 const SCOPE_WRITE = 'chart:write';
-const SCOPE_PUBLISH = 'chart:read, chart:write, theme:read and visualization:read';
 
 // Datawrapper chart IDs are 5 alphanumeric characters
 const CHART_ID_PATTERN = /^[A-Za-z0-9]{5}$/;
@@ -238,24 +237,6 @@ export class DatawrapperClient {
       await this.getClient().delete(`/charts/${chartId}`);
     } catch (error: any) {
       throw this.toApiError(error, 'delete chart', { scope: SCOPE_WRITE, chartId });
-    }
-  }
-
-  /**
-   * Publish a chart publicly. POST /charts/{id}/publish responds with { data: Chart, version, url }.
-   */
-  async publishChart(chartId: string): Promise<DatawrapperPublishResult> {
-    this.assertChartId(chartId);
-    try {
-      const response = await this.getClient().post(`/charts/${chartId}/publish`);
-      const body = response.data || {};
-      return {
-        chart: body.data ?? body,
-        version: typeof body.version === 'number' ? body.version : undefined,
-        url: typeof body.url === 'string' ? body.url : undefined,
-      };
-    } catch (error: any) {
-      throw this.toApiError(error, 'publish chart', { scope: SCOPE_PUBLISH, chartId });
     }
   }
 

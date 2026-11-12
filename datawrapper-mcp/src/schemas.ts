@@ -33,7 +33,7 @@ const MapTypeSchema = z.enum(['d3-maps-symbols', 'd3-maps-choropleth']);
 
 const HexColorSchema = z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'Colors must be hex colors like "#2E7D32"');
 
-// Inline PNG preview attached to create/update/publish responses
+// Inline PNG preview attached to create/update responses
 const PreviewSchema = z.boolean().optional().describe(
   'Optional: attach a PNG preview image of the chart to the response (default true). Use it to check that changes such as colors look right. Set false to save tokens.'
 );
@@ -129,13 +129,6 @@ export const CreateVisualizationSchema = z.object({
   preview: PreviewSchema,
 });
 
-export const PublishVisualizationSchema = z.object({
-  api_key: ApiKeySchema,
-  chart_id: ChartIdSchema.describe(
-    'The chart ID returned from create_visualization (or found via list_visualizations)'
-  ),
-  preview: PreviewSchema,
-});
 
 export const ListVisualizationsSchema = z.object({
   api_key: ApiKeySchema,

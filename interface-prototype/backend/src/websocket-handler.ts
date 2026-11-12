@@ -199,9 +199,9 @@ export class WebSocketHandler {
           }
 
           // Route tool call to appropriate MCP client
-          // Datawrapper tools: create_visualization, publish_visualization
+          // Datawrapper tools: create_visualization
           // Berlin tools: search_datasets, fetch_dataset_data
-          const isDatawrapperTool = toolName === 'create_visualization' || toolName === 'publish_visualization';
+          const isDatawrapperTool = toolName === 'create_visualization';
           const mcpClient = isDatawrapperTool ? this.datawrapperMcpClient : this.berlinMcpClient;
 
           if (!mcpClient) {
