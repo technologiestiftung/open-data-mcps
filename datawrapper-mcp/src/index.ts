@@ -24,6 +24,7 @@ import {
   DatawrapperChartUpdate,
 } from './types.js';
 import { BasemapMatcher } from './basemap-matcher.js';
+import { columnNameToVariable, normalizeNumericStrings } from './data-normalizer.js';
 import {
   buildColorSettings,
   buildColumnFormat,
@@ -400,6 +401,7 @@ export class DatawrapperMCPServer {
 
   private async handleCreateVisualization(params: CreateVisualizationParams): Promise<CallToolResult> {
     try {
+      params = { ...params, data: normalizeNumericStrings(params.data) };
       const { api_key, data, chart_type, variant, map_type, base_color, thick, value_label_format, visualize_overrides, title, description, source_dataset_id, language, folder_id, preview } = params;
       const datawrapperClient = this.getAuthenticatedClient(api_key);
 
@@ -687,12 +689,13 @@ ${JSON.stringify(sampleFeature, null, 2)}
         ...(visualize_overrides || {}),
         basemap: basemap,
         'map-key-attr': keyAttr,
+        // Templates use Datawrapper's variable names: "Fahrraddiebstähle" is {{ fahrraddiebsthle }}
         tooltip: {
-          body: `<b>{{ ${valueCol} }}</b>`,
-          title: `{{ ${regionCol} }}`,
+          body: `<b>{{ ${columnNameToVariable(valueCol)} }}</b>`,
+          title: `{{ ${columnNameToVariable(regionCol)} }}`,
           fields: {
-            [regionCol]: regionCol,
-            [valueCol]: valueCol
+            [columnNameToVariable(regionCol)]: regionCol,
+            [columnNameToVariable(valueCol)]: valueCol
           }
         }
       },
@@ -996,6 +999,9 @@ ${embedCode}
 
   private async handleUpdateVisualization(params: UpdateVisualizationParams): Promise<CallToolResult> {
     try {
+      if (params.data !== undefined) {
+        params = { ...params, data: normalizeNumericStrings(params.data) };
+      }
       const {
         api_key, chart_id, title, description, byline, source_name, source_url,
         base_color, thick, value_label_format, visualize_overrides, chart_type, variant, map_type, data,
