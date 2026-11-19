@@ -734,6 +734,32 @@ describe('create_visualization styling', () => {
     const metadata: any = createSpy.mock.calls[0][1];
     expect(metadata.visualize.colorscale).toEqual({ colors: [{ color: '#e0ece0', position: 0 }, { color: '#2E7D32', position: 1 }] });
   });
+
+  it('uses Datawrapper variable names in choropleth tooltips and uploads text numbers as numbers', async () => {
+    const createSpy = vi.spyOn(DatawrapperClient.prototype, 'createChart').mockResolvedValue(chart({ id: 'map01', type: 'd3-maps-choropleth' }));
+    const uploadSpy = vi.spyOn(DatawrapperClient.prototype, 'uploadData').mockResolvedValue();
+
+    await client.callTool({
+      name: 'create_visualization',
+      arguments: {
+        api_key: API_KEY,
+        chart_type: 'map',
+        map_type: 'd3-maps-choropleth',
+        basemap: 'berlin-boroughs',
+        region_column: 'Bezirk',
+        value_column: 'Fahrraddiebstähle',
+        data: [{ Bezirk: 'Mitte', 'Fahrraddiebstähle': '1.234,5' }, { Bezirk: 'Pankow', 'Fahrraddiebstähle': '987' }],
+      },
+    });
+
+    const metadata: any = createSpy.mock.calls[0][1];
+    expect(metadata.visualize.tooltip).toEqual({
+      body: '<b>{{ fahrraddiebsthle }}</b>',
+      title: '{{ bezirk }}',
+      fields: { bezirk: 'Bezirk', fahrraddiebsthle: 'Fahrraddiebstähle' },
+    });
+    expect(uploadSpy.mock.calls[0][1]).toBe('Bezirk,Fahrraddiebstähle\nMitte,1234.5\nPankow,987');
+  });
 });
 
 describe('folder and team errors', () => {

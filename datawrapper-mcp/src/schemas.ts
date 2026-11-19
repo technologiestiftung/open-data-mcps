@@ -81,7 +81,7 @@ const StyleFields = {
 export const CreateVisualizationSchema = z.object({
   api_key: ApiKeySchema,
   data: z.any().describe(
-    'Array of data objects. For choropleth maps: tabular data with region IDs/names. For symbol maps: GeoJSON FeatureCollection of Point features (all properties are kept as columns, e.g. for color_column).'
+    'Array of data objects. For choropleth maps: tabular data with region IDs/names. For symbol maps: GeoJSON FeatureCollection of Point features (all properties are kept as columns, e.g. for color_column). Send numbers as JSON numbers (12.5, not "12,5" or "1.234").'
   ),
   chart_type: ChartTypeSchema.describe('Type of visualization to create'),
   variant: VariantSchema.optional().describe(
@@ -218,7 +218,7 @@ export const UpdateVisualizationSchema = z.object({
   ...StyleFields,
   preview: PreviewSchema,
   data: z.any().optional().describe(
-    'Optional replacement dataset. Replaces the whole dataset. Array of data objects; for symbol maps a GeoJSON FeatureCollection. For choropleth maps the data must keep the map\'s region and value columns.'
+    'Optional replacement dataset. Replaces the whole dataset. Array of data objects; for symbol maps a GeoJSON FeatureCollection. For choropleth maps the data must keep the map\'s region and value columns. Send numbers as JSON numbers (12.5, not "12,5" or "1.234").'
   ),
 });
 
